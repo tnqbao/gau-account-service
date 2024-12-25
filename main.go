@@ -1,24 +1,19 @@
 package main
 
 import (
-	"time"
+	"log"
 
-	"github.com/gin-contrib/cors"
+	"github.com/joho/godotenv"
 	"github.com/tnqbao/gau_services/config"
 	"github.com/tnqbao/gau_services/routes"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
 	db := config.InitDB()
 	router := routes.SetupRouter(db)
-	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
-
-	router.Run(":8443")
+	router.Run(":8080")
 }

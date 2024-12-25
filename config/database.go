@@ -1,57 +1,41 @@
 package config
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/tnqbao/gau_services/models"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 var DB *gorm.DB
 
-func getSecret(path string) string {
-	file, err := os.Open(path)
-	if err != nil {
-		log.Fatalf("Error opening secret file: %v", err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	if scanner.Scan() {
-		return scanner.Text()
-	}
-	if err := scanner.Err(); err != nil {
-		log.Fatalf("Error reading secret file: %v", err)
-	}
-	return ""
-}
-
 func InitDB() *gorm.DB {
-	username_db := getSecret("/run/secrets/db_username")
-	password_db := getSecret("/run/secrets/db_password")
-	address_db := getSecret("/run/secrets/db_address")
-	database_name := getSecret("/run/secrets/db_name")
+	var err error
+	pg_user := os.Getenv("POSTGRES_USER")
+	pg_password := os.Getenv("POSTGRES_PASSWORD")
+	pg_host := os.Getenv("POSTGRES_HOST")
+	database_name := "gau_services_db"
 
-	if username_db == "" || password_db == "" || address_db == "" || database_name == "" {
+	if pg_user == "" || pg_password == "" || pg_host == "" || database_name == "" {
 		log.Fatal("One or more required secrets are missing")
 	}
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		username_db, password_db, address_db, database_name)
+	fmt.Printf("DB connect status: %s:%s@tcp(%s:5432)/%s\n", pg_user, pg_password, pg_host, database_name)
 
-	var err error
-	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=5432 sslmode=disable TimeZone=Asia/Ho_Chi_Minh", pg_host, pg_user, pg_password, database_name)
+
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
 	log.Println("Database connected")
 
-	err = DB.AutoMigrate(&models.User{}, &models.UserInformation{}, &models.UserAuthentication{})
+	err = DB.AutoMigrate(&models.UserInformation{}, &models.UserAuthentication{})
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}

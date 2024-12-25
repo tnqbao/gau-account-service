@@ -1,14 +1,14 @@
-FROM golang:1.19-alpine
-
-WORKDIR /app
-
+FROM golang:1.23-alpine AS builder
+WORKDIR /gau_user 
 COPY go.mod go.sum ./
 RUN go mod download
-
 COPY . .
+COPY .env .  
+RUN go build -o main .
 
-RUN go build -o /app/main
-
+FROM alpine:latest
+WORKDIR /gau_user
+COPY --from=builder /gau_user/main .
+COPY .env .  
 EXPOSE 8080
-
-CMD ["/app/main"]
+CMD ["./main"]
