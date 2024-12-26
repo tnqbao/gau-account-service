@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"github.com/joho/godotenv"
-	"github.com/tnqbao/gau_services/config"
-	"github.com/tnqbao/gau_services/routes"
+	"github.com/tnqbao/gau_user_service/config"
+	"github.com/tnqbao/gau_user_service/routes"
 )
 
 func main() {

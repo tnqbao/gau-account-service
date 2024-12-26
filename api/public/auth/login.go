@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	provider "github.com/tnqbao/gau_services/api"
+	provider "github.com/tnqbao/gau_user_service/api"
 	"gorm.io/gorm"
 )
 

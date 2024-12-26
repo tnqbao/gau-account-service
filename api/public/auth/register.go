@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	provider "github.com/tnqbao/gau_services/api"
-	api_user_authed "github.com/tnqbao/gau_services/api/authed/user"
+	provider "github.com/tnqbao/gau_user_service/api"
+	api_user_authed "github.com/tnqbao/gau_user_service/api/authed/user"
 )
 
 func Register(c *gin.Context) {

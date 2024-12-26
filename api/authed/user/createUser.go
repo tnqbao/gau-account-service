@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	provider "github.com/tnqbao/gau_services/api"
-	"github.com/tnqbao/gau_services/models"
+	provider "github.com/tnqbao/gau_user_service/api"
+	"github.com/tnqbao/gau_user_service/models"
 	"gorm.io/gorm"
 )
 

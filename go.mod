@@ -1,4 +1,4 @@
-module github.com/tnqbao/gau_services
+module github.com/tnqbao/gau_user_service
 
 go 1.23
 

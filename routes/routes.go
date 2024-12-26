@@ -2,10 +2,10 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	api_authed_user "github.com/tnqbao/gau_services/api/authed/user"
-	api_public_auth "github.com/tnqbao/gau_services/api/public/auth"
+	api_authed_user "github.com/tnqbao/gau_user_service/api/authed/user"
+	api_public_auth "github.com/tnqbao/gau_user_service/api/public/auth"
 
-	"github.com/tnqbao/gau_services/middlewares"
+	"github.com/tnqbao/gau_user_service/middlewares"
 	"gorm.io/gorm"
 )
 
