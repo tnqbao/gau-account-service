@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	api_authed_user "github.com/tnqbao/gau_user_service/api/authed/user"
+	"github.com/tnqbao/gau_user_service/api/public"
 	api_public_auth "github.com/tnqbao/gau_user_service/api/public/auth"
 
 	"github.com/tnqbao/gau_user_service/middlewares"
@@ -20,20 +21,27 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	{
 		userRoutes := apiRoutes.Group("/user")
 		{
-			userRoutes.Use(middlewares.AuthMiddleware())
+			authedRoutes := userRoutes.Group("/authed")
+			{
+				authedRoutes.Use(middlewares.AuthMiddleware())
 
-			userRoutes.GET("/:id", api_authed_user.GetUserById)
-			userRoutes.GET("/me", api_authed_user.GetMe)
+				authedRoutes.GET("/:id", api_authed_user.GetUserById)
+				authedRoutes.GET("/me", api_authed_user.GetMe)
 
-			userRoutes.DELETE("/delete", api_authed_user.DeleteUserById)
-			userRoutes.PUT("/update", api_authed_user.UpdateUserInformation)
-		}
-		authRoutes := apiRoutes.Group("/auth")
-		{
-			authRoutes.POST("/register", api_public_auth.Register)
-			authRoutes.POST("/login", api_public_auth.Authentication)
-			authRoutes.POST("/logout", middlewares.AuthMiddleware(), api_public_auth.Logout)
-			authRoutes.GET("/check", api_public_auth.HealthCheck)
+				authedRoutes.DELETE("/delete", api_authed_user.DeleteUserById)
+				authedRoutes.PUT("/update", api_authed_user.UpdateUserInformation)
+			}
+			publicRoutes := userRoutes.Group("/public")
+			{
+				publicRoutes.GET("/check", api_public_auth.HealthCheck)
+				publicRoutes.GET("/user/:id", public.GetPublicUserById)
+
+				publicRoutes.POST("/register", api_public_auth.Register)
+				publicRoutes.POST("/login", api_public_auth.Authentication)
+				publicRoutes.POST("/logout", middlewares.AuthMiddleware(), api_public_auth.Logout)
+
+			}
+
 		}
 	}
 	return r
