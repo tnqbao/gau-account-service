@@ -8,9 +8,6 @@ controllers/encrypt/test.go
 # Ignore app directory if not necessary in the repository
 app/
 
-# Ignore go.sum if you do not want to commit module information
-go.sum
-
 # Ignore log, temporary, or backup files
 *.log
 *.tmp
