@@ -1,4 +1,4 @@
-package api_user
+package providers
 
 import (
 	"crypto/sha256"

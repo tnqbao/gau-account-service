@@ -1,6 +1,7 @@
 package api_user
 
 import (
+	"github.com/tnqbao/gau_user_service/providers"
 	"log"
 	"net/http"
 	"os"
@@ -8,12 +9,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	provider "github.com/tnqbao/gau_user_service/api"
 	"gorm.io/gorm"
 )
 
 func Authentication(c *gin.Context) {
-	var req provider.ClientRequestLogin
+	var req providers.ClientRequestLogin
 	jwtKey := os.Getenv("JWT_SECRET")
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Println("UserRequest binding error:", err)
@@ -24,7 +24,7 @@ func Authentication(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Username and Password are required"})
 		return
 	}
-	hashedPassword := provider.HashPassword(*req.Password)
+	hashedPassword := providers.HashPassword(*req.Password)
 	user, err := verifyCredentials(c, *req.Username, hashedPassword)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "username or password invalid!"})
@@ -33,8 +33,9 @@ func Authentication(c *gin.Context) {
 
 	expirationTime := time.Now().Add(7 * 24 * time.Hour)
 
-	claims := &provider.ClaimsResponse{
+	claims := &providers.ClaimsResponse{
 		UserID:         user.UserId,
+		FullName:       user.FullName,
 		UserPermission: user.Permission,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
@@ -56,15 +57,15 @@ func Authentication(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"token": tokenString, "user": user})
 }
 
-func verifyCredentials(c *gin.Context, username, password string) (provider.ServerResponseLogin, error) {
-	var user provider.ServerResponseLogin
+func verifyCredentials(c *gin.Context, username, password string) (providers.ServerResponseLogin, error) {
+	var user providers.ServerResponseLogin
 	db := c.MustGet("db").(*gorm.DB)
 	if err := db.Table("user_authentications").
 		Select("user_authentications.user_id, user_authentications.permission , user_informations.full_name").
 		Joins("INNER JOIN user_informations ON user_informations.user_id = user_authentications.user_id").
 		Where("user_authentications.username = ? AND user_authentications.password = ?", username, password).
 		First(&user).Error; err != nil {
-		return provider.ServerResponseLogin{}, err
+		return providers.ServerResponseLogin{}, err
 	}
 	return user, nil
 }

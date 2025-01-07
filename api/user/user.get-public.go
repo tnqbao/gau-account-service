@@ -1,11 +1,11 @@
-package public
+package api_user
 
 import (
+	provider "github.com/tnqbao/gau_user_service/providers"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	provider "github.com/tnqbao/gau_user_service/api"
 	"github.com/tnqbao/gau_user_service/models"
 	"gorm.io/gorm"
 )

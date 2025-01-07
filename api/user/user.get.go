@@ -1,11 +1,11 @@
 package api_user
 
 import (
+	"github.com/tnqbao/gau_user_service/providers"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	provider "github.com/tnqbao/gau_user_service/api"
 	"github.com/tnqbao/gau_user_service/models"
 	"gorm.io/gorm"
 )
@@ -61,12 +61,12 @@ func GetUserById(c *gin.Context) {
 		}
 		return
 	}
-	response := provider.ServerResp{
+	response := providers.ServerResp{
 		UserId:     user.UserId,
-		Fullame:    provider.ToString(userInfo.FullName),
-		Email:      provider.ToString(userInfo.Email),
-		Phone:      provider.ToString(userInfo.Phone),
-		DateBirth:  provider.FormatDateToString(userInfo.DateOfBirth),
+		Fullame:    providers.ToString(userInfo.FullName),
+		Email:      providers.ToString(userInfo.Email),
+		Phone:      providers.ToString(userInfo.Phone),
+		DateBirth:  providers.FormatDateToString(userInfo.DateOfBirth),
 		Permission: user.Permission,
 	}
 	c.JSON(http.StatusOK, response)
@@ -100,12 +100,12 @@ func GetMe(c *gin.Context) {
 		}
 		return
 	}
-	response := provider.ServerResp{
+	response := providers.ServerResp{
 		UserId:     user.UserId,
-		Fullame:    provider.ToString(userInfo.FullName),
-		Email:      provider.ToString(userInfo.Email),
-		Phone:      provider.ToString(userInfo.Phone),
-		DateBirth:  provider.FormatDateToString(userInfo.DateOfBirth),
+		Fullame:    providers.ToString(userInfo.FullName),
+		Email:      providers.ToString(userInfo.Email),
+		Phone:      providers.ToString(userInfo.Phone),
+		DateBirth:  providers.FormatDateToString(userInfo.DateOfBirth),
 		Permission: user.Permission,
 	}
 	c.JSON(http.StatusOK, response)

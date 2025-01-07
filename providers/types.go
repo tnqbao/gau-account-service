@@ -1,4 +1,4 @@
-package api_user
+package providers
 
 import "github.com/golang-jwt/jwt/v5"
 
@@ -23,6 +23,7 @@ type ServerResp struct {
 type ClaimsResponse struct {
 	UserID         uint   `json:"user_id"`
 	UserPermission string `json:"permission"`
+	FullName       string `json:"fullname"`
 	jwt.RegisteredClaims
 }
 

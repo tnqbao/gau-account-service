@@ -1,16 +1,16 @@
 package api_user
 
 import (
+	"github.com/tnqbao/gau_user_service/providers"
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	provider "github.com/tnqbao/gau_user_service/api"
 	"github.com/tnqbao/gau_user_service/models"
 	"gorm.io/gorm"
 )
 
-func CreateUser(c *gin.Context, r provider.ClientReq) {
+func CreateUser(c *gin.Context, r providers.ClientReq) {
 	db := c.MustGet("db").(*gorm.DB)
 	err := db.Transaction(func(tx *gorm.DB) error {
 		userAuth := models.UserAuthentication{
@@ -24,9 +24,9 @@ func CreateUser(c *gin.Context, r provider.ClientReq) {
 
 		userInfor := models.UserInformation{
 			FullName:    r.Fullname,
-			Email:       provider.CheckNullString(r.Email),
-			Phone:       provider.CheckNullString(r.Phone),
-			DateOfBirth: provider.FormatStringToDate(r.DateOfBirth),
+			Email:       providers.CheckNullString(r.Email),
+			Phone:       providers.CheckNullString(r.Phone),
+			DateOfBirth: providers.FormatStringToDate(r.DateOfBirth),
 			UserId:      userAuth.UserId,
 		}
 
