@@ -25,7 +25,7 @@ func InitDB() *gorm.DB {
 
 	fmt.Printf("DB connect status: %s:%s@tcp(%s:5432)/%s\n", pg_user, pg_password, pg_host, database_name)
 
-	dsn := fmt.Sprintf("host=%s user1=%s password=%s dbname=%s port=5432 sslmode=disable TimeZone=Asia/Ho_Chi_Minh", pg_host, pg_user, pg_password, database_name)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=5432 sslmode=disable TimeZone=Asia/Ho_Chi_Minh", pg_host, pg_user, pg_password, database_name)
 
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
