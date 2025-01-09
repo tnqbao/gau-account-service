@@ -24,5 +24,5 @@ func Register(c *gin.Context) {
 
 	log.Println("Parsed Request:", req)
 
-	user.api_user.CreateUser(c, req)
+	user.CreateUser(c, req)
 }
