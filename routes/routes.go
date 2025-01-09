@@ -30,14 +30,19 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 				authedRoutes.DELETE("/delete", user.DeleteUserById)
 				authedRoutes.PUT("/update", user.UpdateUserInformation)
 			}
-			publicRoutes := userRoutes.Group("/")
+
+			authRotues := userRoutes.Group("/auth")
+			{
+				authRotues.POST("/login", auth.Authentication)
+				authRotues.PUT("/register", auth.Register)
+				authRotues.POST("/logout", auth.Logout, middlewares.AuthMiddleware())
+			}
+
+			publicRoutes := userRoutes.Group("/public")
 			{
 				publicRoutes.GET("/check", api_user.HealthCheck)
-				publicRoutes.GET("/user/:id", user.GetPublicUserById)
+				publicRoutes.GET("/:id", user.GetPublicUserById)
 
-				publicRoutes.POST("/register", auth.Register)
-				publicRoutes.POST("/login", auth.Authentication)
-				publicRoutes.POST("/logout", middlewares.AuthMiddleware(), auth.Logout)
 			}
 		}
 	}
