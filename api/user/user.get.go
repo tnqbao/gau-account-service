@@ -1,4 +1,4 @@
-package api_user
+package user
 
 import (
 	"github.com/tnqbao/gau_user_service/providers"
@@ -15,7 +15,7 @@ func GetUserById(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user1 ID format"})
 		return
 	}
 

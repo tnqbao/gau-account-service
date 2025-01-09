@@ -1,4 +1,4 @@
-package api_user
+package auth
 
 import (
 	"net/http"

@@ -1,4 +1,4 @@
-package api_user
+package user
 
 import (
 	"github.com/tnqbao/gau_user_service/providers"
@@ -37,7 +37,7 @@ func CreateUser(c *gin.Context, r providers.ClientReq) {
 	})
 	if err != nil {
 		log.Println("Transaction error:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cannot create user: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cannot create user1: " + err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "User successfully created"})

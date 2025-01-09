@@ -3,8 +3,8 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/tnqbao/gau_user_service/api"
-	api_user2 "github.com/tnqbao/gau_user_service/api/auth"
-	api_user3 "github.com/tnqbao/gau_user_service/api/user"
+	"github.com/tnqbao/gau_user_service/api/auth"
+	"github.com/tnqbao/gau_user_service/api/user"
 	"github.com/tnqbao/gau_user_service/middlewares"
 	"gorm.io/gorm"
 )
@@ -20,27 +20,25 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	{
 		userRoutes := apiRoutes.Group("/user")
 		{
-			authedRoutes := userRoutes.Group("/authed")
+			authedRoutes := userRoutes.Group("/")
 			{
 				authedRoutes.Use(middlewares.AuthMiddleware())
 
-				authedRoutes.GET("/:id", api_user3.GetUserById)
-				authedRoutes.GET("/me", api_user3.GetMe)
+				authedRoutes.GET("/:id", user.GetUserById)
+				authedRoutes.GET("/me", user.GetMe)
 
-				authedRoutes.DELETE("/delete", api_user3.DeleteUserById)
-				authedRoutes.PUT("/update", api_user3.UpdateUserInformation)
+				authedRoutes.DELETE("/delete", user.DeleteUserById)
+				authedRoutes.PUT("/update", user.UpdateUserInformation)
 			}
-			publicRoutes := userRoutes.Group("/public")
+			publicRoutes := userRoutes.Group("/")
 			{
 				publicRoutes.GET("/check", api_user.HealthCheck)
-				publicRoutes.GET("/user/:id", api_user3.GetPublicUserById)
+				publicRoutes.GET("/user/:id", user.GetPublicUserById)
 
-				publicRoutes.POST("/register", api_user2.Register)
-				publicRoutes.POST("/login", api_user2.Authentication)
-				publicRoutes.POST("/logout", middlewares.AuthMiddleware(), api_user2.Logout)
-
+				publicRoutes.POST("/register", auth.Register)
+				publicRoutes.POST("/login", auth.Authentication)
+				publicRoutes.POST("/logout", middlewares.AuthMiddleware(), auth.Logout)
 			}
-
 		}
 	}
 	return r
