@@ -39,3 +39,12 @@ type ClientRequestLogin struct {
 	Password  *string `json:"password"`
 	KeepLogin *string `json:"keepMeLogin"`
 }
+
+type UserPublic struct {
+	UserId   uint   `json:"user_id"`
+	Fullname string `json:"fullname"`
+}
+
+type IDRequest struct {
+	IDs []uint `json:"ids"`
+}

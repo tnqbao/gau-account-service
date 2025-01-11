@@ -2,8 +2,8 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/tnqbao/gau_user_service/api"
 	"github.com/tnqbao/gau_user_service/api/auth"
+	"github.com/tnqbao/gau_user_service/api/public"
 	"github.com/tnqbao/gau_user_service/api/user"
 	"github.com/tnqbao/gau_user_service/middlewares"
 	"gorm.io/gorm"
@@ -40,9 +40,9 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 
 			publicRoutes := userRoutes.Group("/public")
 			{
-				publicRoutes.GET("/check", api_user.HealthCheck)
-				publicRoutes.GET("/:id", user.GetPublicUserById)
-
+				publicRoutes.GET("/check", public.HealthCheck)
+				publicRoutes.GET("/:id", public.GetPublicUserByID)
+				publicRoutes.POST("/list", public.GetListUserPublicByIDs)
 			}
 		}
 	}

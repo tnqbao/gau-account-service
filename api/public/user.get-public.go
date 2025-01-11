@@ -1,4 +1,4 @@
-package user
+package public
 
 import (
 	provider "github.com/tnqbao/gau_user_service/providers"
@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetPublicUserById(c *gin.Context) {
+func GetPublicUserByID(c *gin.Context) {
 	db := c.MustGet("db").(*gorm.DB)
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
