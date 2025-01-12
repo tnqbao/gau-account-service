@@ -3,7 +3,7 @@ package models
 import "time"
 
 type UserInformation struct {
-	UserId          uint       `gorm:"primaryKey" json:"user_id"`
+	UserId          uint       `gorm:"primaryKey;index" json:"user_id"`
 	FullName        *string    `json:"fullname"`
 	Phone           *string    `gorm:"unique" json:"phone"`
 	IsPhoneVerified bool       `gorm:"default:false" json:"is_phone_verified"`
