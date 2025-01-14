@@ -54,7 +54,7 @@ func Authentication(c *gin.Context) {
 		timeExpired = 0
 	}
 	c.SetCookie("auth_token", tokenString, timeExpired, "/", os.Getenv("GLOBAL_DOMAIN"), false, true)
-	c.JSON(http.StatusOK, gin.H{"token": tokenString, "user1": user})
+	c.JSON(http.StatusOK, gin.H{"token": tokenString, "user": user})
 }
 
 func verifyCredentials(c *gin.Context, username, password string) (providers.ServerResponseLogin, error) {

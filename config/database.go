@@ -17,7 +17,7 @@ func InitDB() *gorm.DB {
 	pg_user := os.Getenv("POSTGRES_USER")
 	pg_password := os.Getenv("POSTGRES_PASSWORD")
 	pg_host := os.Getenv("POSTGRES_HOST")
-	database_name := "gau_services_db"
+	database_name := os.Getenv("POSTGRES_DB")
 
 	if pg_user == "" || pg_password == "" || pg_host == "" || database_name == "" {
 		log.Fatal("One or more required secrets are missing")

@@ -1,23 +1,26 @@
 package providers
 
-import "github.com/golang-jwt/jwt/v5"
+import (
+	"github.com/golang-jwt/jwt/v5"
+	"time"
+)
 
 type ClientReq struct {
-	Username    *string `json:"username"`
-	Password    *string `json:"password"`
-	Fullname    *string `json:"fullname"`
-	Email       *string `json:"email"`
-	Phone       *string `json:"phone"`
-	DateOfBirth *string `json:"date_of_birth"`
+	Username    *string    `json:"username"`
+	Password    *string    `json:"password"`
+	Fullname    *string    `json:"fullname"`
+	Email       *string    `json:"email"`
+	Phone       *string    `json:"phone"`
+	DateOfBirth *time.Time `json:"date_of_birth"`
 }
 
 type ServerResp struct {
-	UserId     uint   `json:"user_id"`
-	Fullame    string `json:"fullname"`
-	Email      string `json:"email"`
-	Phone      string `json:"phone"`
-	DateBirth  string `json:"date_of_birth"`
-	Permission string `json:"permission"`
+	UserId     uint       `json:"user_id"`
+	Fullame    string     `json:"fullname"`
+	Email      string     `json:"email"`
+	Phone      string     `json:"phone"`
+	DateBirth  *time.Time `json:"date_of_birth"`
+	Permission string     `json:"permission"`
 }
 
 type ClaimsResponse struct {
