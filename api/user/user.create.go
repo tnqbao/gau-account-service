@@ -12,9 +12,16 @@ import (
 
 func CreateUser(c *gin.Context, r providers.ClientReq) {
 	db := c.MustGet("db").(*gorm.DB)
+	var userName *string
+	if r.Username != nil && *r.Username != "" {
+		userName = r.Username
+	} else if r.Email != nil && *r.Email != "" {
+		userName = r.Email
+	}
+
 	err := db.Transaction(func(tx *gorm.DB) error {
 		userAuth := models.UserAuthentication{
-			Username:   providers.CheckNullString(r.Email),
+			Username:   userName,
 			Password:   r.Password,
 			Permission: "member",
 		}
