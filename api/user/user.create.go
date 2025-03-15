@@ -14,7 +14,7 @@ func CreateUser(c *gin.Context, r providers.ClientReq) {
 	db := c.MustGet("db").(*gorm.DB)
 	err := db.Transaction(func(tx *gorm.DB) error {
 		userAuth := models.UserAuthentication{
-			Username:   r.Username,
+			Username:   providers.CheckNullString(r.Email),
 			Password:   r.Password,
 			Permission: "member",
 		}

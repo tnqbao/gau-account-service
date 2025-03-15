@@ -20,14 +20,26 @@ func Authentication(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
 		return
 	}
-	if req.Username == nil || req.Password == nil || *req.Username == "" || *req.Password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Username and Password are required"})
+	if (req.Username == nil && req.Email == nil) || req.Password == nil || (*req.Username == "" && *req.Email == "") || *req.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email/Username and Password are required"})
 		return
 	}
+
+	var user providers.ServerResponseLogin
+	var err error
+
 	hashedPassword := providers.HashPassword(*req.Password)
-	user, err := verifyCredentials(c, *req.Username, hashedPassword)
+	if req.Username != nil && *req.Username != "" {
+		user, err = verifyCredentialsByUsername(c, *req.Username, hashedPassword)
+	} else if req.Email != nil && *req.Email != "" {
+		user, err = verifyCredentialsByEmail(c, *req.Email, hashedPassword)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email/Username and Password are required"})
+		return
+	}
+
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "username or password invalid!"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username/email or password"})
 		return
 	}
 
@@ -42,6 +54,7 @@ func Authentication(c *gin.Context) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
 	tokenString, err := token.SignedString([]byte(jwtKey))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
@@ -57,7 +70,7 @@ func Authentication(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"token": tokenString, "user": user})
 }
 
-func verifyCredentials(c *gin.Context, username, password string) (providers.ServerResponseLogin, error) {
+func verifyCredentialsByUsername(c *gin.Context, username, password string) (providers.ServerResponseLogin, error) {
 	var user providers.ServerResponseLogin
 	db := c.MustGet("db").(*gorm.DB)
 	if err := db.Table("user_authentications").
@@ -67,5 +80,20 @@ func verifyCredentials(c *gin.Context, username, password string) (providers.Ser
 		First(&user).Error; err != nil {
 		return providers.ServerResponseLogin{}, err
 	}
+	return user, nil
+}
+
+func verifyCredentialsByEmail(c *gin.Context, email, password string) (providers.ServerResponseLogin, error) {
+	var user providers.ServerResponseLogin
+	db := c.MustGet("db").(*gorm.DB)
+
+	if err := db.Table("user_authentications").
+		Select("user_authentications.user_id, user_authentications.permission , user_informations.full_name").
+		Joins("INNER JOIN user_informations ON user_informations.user_id = user_authentications.user_id").
+		Where("user_authentications.email = ? AND user_authentications.password = ?", email, password).
+		First(&user).Error; err != nil {
+		return providers.ServerResponseLogin{}, err
+	}
+
 	return user, nil
 }

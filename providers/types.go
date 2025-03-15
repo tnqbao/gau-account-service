@@ -39,6 +39,7 @@ type ServerResponseLogin struct {
 
 type ClientRequestLogin struct {
 	Username  *string `json:"username"`
+	Email     *string `json:"email"`
 	Password  *string `json:"password"`
 	KeepLogin *string `json:"keepMeLogin"`
 }
