@@ -17,11 +17,9 @@ func Register(c *gin.Context) {
 		return
 	}
 	*req.Password = providers.HashPassword(*req.Password)
-	if (*req.Username == "" && *req.Email == "") ||
-		*req.Password == "" ||
-		(req.Fullname == nil && req.Email == nil) ||
+	if (req.Fullname == nil && req.Email == nil) ||
 		req.Password == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Username and Password must be provided"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email/Username and Password must be provided"})
 		return
 	}
 
