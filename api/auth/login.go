@@ -20,7 +20,7 @@ func Authentication(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
 		return
 	}
-	if (req.Username == nil && req.Email == nil) || req.Password == nil || (*req.Username == "" && *req.Email == "") || *req.Password == "" {
+	if (req.Username == nil && req.Email == nil) || req.Password == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Email/Username and Password are required"})
 		return
 	}
@@ -29,9 +29,9 @@ func Authentication(c *gin.Context) {
 	var err error
 
 	hashedPassword := providers.HashPassword(*req.Password)
-	if req.Username != nil && *req.Username != "" {
+	if req.Username != nil {
 		user, err = verifyCredentialsByUsername(c, *req.Username, hashedPassword)
-	} else if req.Email != nil && *req.Email != "" {
+	} else if req.Email != nil {
 		user, err = verifyCredentialsByEmail(c, *req.Email, hashedPassword)
 	} else {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Email/Username and Password are required"})
