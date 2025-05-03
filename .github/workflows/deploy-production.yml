@@ -38,5 +38,5 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/docker-services/base-application-layer
+            cd ~/docker-services/base-application-zone
             sh restart_gau_user_service.sh

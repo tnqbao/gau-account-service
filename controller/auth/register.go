@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"github.com/tnqbao/gau_user_service/api/user"
+	"github.com/tnqbao/gau_user_service/controller"
 	"github.com/tnqbao/gau_user_service/providers"
 	"log"
 	"net/http"
@@ -25,5 +25,5 @@ func Register(c *gin.Context) {
 
 	log.Println("Parsed Request:", req)
 
-	user.CreateUser(c, req)
+	controller.CreateUser(c, req)
 }

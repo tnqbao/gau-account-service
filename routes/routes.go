@@ -2,9 +2,9 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/tnqbao/gau_user_service/api/auth"
-	"github.com/tnqbao/gau_user_service/api/public"
-	"github.com/tnqbao/gau_user_service/api/user"
+	"github.com/tnqbao/gau_user_service/controller"
+	"github.com/tnqbao/gau_user_service/controller/auth"
+	"github.com/tnqbao/gau_user_service/controller/public"
 	"github.com/tnqbao/gau_user_service/middlewares"
 	"gorm.io/gorm"
 )
@@ -16,7 +16,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		c.Set("db", db)
 		c.Next()
 	})
-	apiRoutes := r.Group("/api")
+	apiRoutes := r.Group("/controller")
 	{
 		userRoutes := apiRoutes.Group("/user")
 		{
@@ -24,11 +24,11 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			{
 				authedRoutes.Use(middlewares.AuthMiddleware())
 
-				authedRoutes.GET("/:id", user.GetUserById)
-				authedRoutes.GET("/me", user.GetMe)
+				authedRoutes.GET("/:id", controller.GetUserById)
+				authedRoutes.GET("/me", controller.GetMe)
 
-				authedRoutes.DELETE("/delete", user.DeleteUserById)
-				authedRoutes.PUT("/update", user.UpdateUserInformation)
+				authedRoutes.DELETE("/delete", controller.DeleteUserById)
+				authedRoutes.PUT("/update", controller.UpdateUserInformation)
 			}
 
 			authRotues := userRoutes.Group("/auth")
