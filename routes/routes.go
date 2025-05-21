@@ -44,6 +44,8 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 				publicRoutes.GET("/:id", public.GetPublicUserByID)
 				publicRoutes.POST("/list", public.GetListUserPublicByIDs)
 			}
+
+			userRoutes.GET("/check-deploy", controller.TestDeployment)
 		}
 	}
 	return r
