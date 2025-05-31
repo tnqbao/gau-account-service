@@ -5,10 +5,10 @@ import (
 	"time"
 )
 
-type ClientReq struct {
-	Username    *string    `json:"username"`
+type UserRegistryCredentialReq struct {
+	Username    string     `json:"username"`
 	Password    *string    `json:"password"`
-	Fullname    *string    `json:"fullname"`
+	FullName    *string    `json:"fullname"`
 	Email       *string    `json:"email"`
 	Phone       *string    `json:"phone"`
 	DateOfBirth *time.Time `json:"date_of_birth"`
@@ -40,6 +40,7 @@ type ServerResponseLogin struct {
 type ClientRequestLogin struct {
 	Username  *string `json:"username"`
 	Email     *string `json:"email"`
+	Phone     *string `json:"phone"`
 	Password  *string `json:"password"`
 	KeepLogin *string `json:"keepMeLogin"`
 }

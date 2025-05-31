@@ -5,8 +5,8 @@ import (
 	"log"
 
 	"github.com/joho/godotenv"
-	"github.com/tnqbao/gau_user_service/config"
-	"github.com/tnqbao/gau_user_service/routes"
+	"github.com/tnqbao/gau-account-service/config"
+	"github.com/tnqbao/gau-account-service/routes"
 )
 
 func main() {
@@ -14,7 +14,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error loading .env file")
 	}
+
+	cf := config.LoadEnvConfig()
 	db := config.InitDB()
-	router := routes.SetupRouter(db)
+
+	router := routes.SetupRouter(db, cf)
 	router.Run(":8080")
 }
