@@ -1,5 +1,101 @@
 package controller
 
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/tnqbao/gau-account-service/providers"
+	"github.com/tnqbao/gau-account-service/repositories"
+)
+
+func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
+	id := c.Param("user_id")
+	if id == "" {
+		c.JSON(400, gin.H{"error": "User ID is required"})
+		return
+	}
+
+	// Convert the user ID to a UUID
+	userId, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Invalid User ID format"})
+		return
+	}
+
+	// Fetch user information from the repository
+	userInfo, err := repositories.GetUserInfoById(userId, c)
+	if err != nil {
+		if err.Error() == "record not found" {
+			c.JSON(404, gin.H{"error": "User not found"})
+		} else {
+			c.JSON(500, gin.H{"error": "Internal server error: " + err.Error()})
+		}
+		return
+	}
+
+	UserInfoResponse := providers.UserInfoResponse{
+		UserId:      userInfo.UserId,
+		FullName:    *userInfo.FullName,
+		Email:       *userInfo.Email,
+		Phone:       *userInfo.Phone,
+		DateOfBirth: userInfo.DateOfBirth,
+	}
+	c.JSON(200, gin.H{
+		"user_info": UserInfoResponse,
+	})
+}
+
+func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
+	id := c.Param("user_id")
+	if id == "" {
+		c.JSON(400, gin.H{"error": "User ID is required"})
+		return
+	}
+
+	userId, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Invalid User ID format"})
+		return
+	}
+
+	var userInfo providers.UserInformationUpdateReq
+	if err := c.ShouldBindJSON(&userInfo); err != nil {
+		c.JSON(400, gin.H{"error": "Invalid request format: " + err.Error()})
+		return
+	}
+
+	user, err := repositories.GetUserInfoById(userId, c)
+	if err != nil {
+		if err.Error() == "record not found" {
+			c.JSON(404, gin.H{"error": "User not found"})
+		} else {
+			c.JSON(500, gin.H{"error": "Internal server error: " + err.Error()})
+		}
+		return
+	}
+
+	if err := ctrl.updateEmail(userId, userInfo.Email, c); err != nil {
+		return
+	}
+	if err := ctrl.updatePhone(userId, userInfo.Phone, c); err != nil {
+		return
+	}
+
+	if userInfo.FullName != nil {
+		user.FullName = userInfo.FullName
+	}
+	if userInfo.DateOfBirth != nil {
+		user.DateOfBirth = userInfo.DateOfBirth
+	}
+
+	updatedUser, err := repositories.UpdateUserInfoById(userId, user, c)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Internal server error: " + err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "User information updated successfully", "user_info": updatedUser})
+}
+
 //
 //import (
 //	"github.com/gin-gonic/gin"

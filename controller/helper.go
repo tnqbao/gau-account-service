@@ -1,9 +1,12 @@
 package controller
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/providers"
+	"github.com/tnqbao/gau-account-service/repositories"
 	"gorm.io/gorm"
 )
 
@@ -72,4 +75,52 @@ func (ctrl *Controller) SetAuthCookie(c *gin.Context, token string, timeExpired 
 	globalDomain := ctrl.config.CORS.GlobalDomain
 	c.SetCookie("auth_token", token, timeExpired, "/", globalDomain, false, true)
 	c.Next()
+}
+
+func (ctrl *Controller) updateEmail(userId uuid.UUID, email *string, c *gin.Context) error {
+	if email == nil {
+		return nil
+	}
+
+	if !providers.IsValidEmail(*email) {
+		c.JSON(400, gin.H{"error": "Invalid email format"})
+		return errors.New("invalid email")
+	}
+
+	existingUser, err := repositories.GetUserCredentialByEmail(*email, c)
+	if err == nil && existingUser.UserId != userId {
+		c.JSON(400, gin.H{"error": "Email already in use by another user"})
+		return errors.New("duplicate email")
+	}
+
+	if err := repositories.UpdateEmailById(userId, *email, c); err != nil {
+		c.JSON(500, gin.H{"error": "Internal server error"})
+		return err
+	}
+
+	return nil
+}
+
+func (ctrl *Controller) updatePhone(userId uuid.UUID, phone *string, c *gin.Context) error {
+	if phone == nil {
+		return nil
+	}
+
+	if !providers.IsValidPhone(*phone) {
+		c.JSON(400, gin.H{"error": "Invalid phone format"})
+		return errors.New("invalid phone")
+	}
+
+	existingUser, err := repositories.GetUserCredentialByPhone(*phone, c)
+	if err == nil && existingUser.UserId != userId {
+		c.JSON(400, gin.H{"error": "Phone number already in use by another user"})
+		return errors.New("duplicate phone")
+	}
+
+	if err := repositories.UpdatePhoneById(userId, *phone, c); err != nil {
+		c.JSON(500, gin.H{"error": "Internal server error"})
+		return err
+	}
+
+	return nil
 }

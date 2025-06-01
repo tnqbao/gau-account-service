@@ -2,11 +2,12 @@ package providers
 
 import (
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"time"
 )
 
 type UserRegistryCredentialReq struct {
-	Username    string     `json:"username"`
+	Username    *string    `json:"username"`
 	Password    *string    `json:"password"`
 	FullName    *string    `json:"fullname"`
 	Email       *string    `json:"email"`
@@ -14,13 +15,12 @@ type UserRegistryCredentialReq struct {
 	DateOfBirth *time.Time `json:"date_of_birth"`
 }
 
-type ServerResp struct {
-	UserId     uint       `json:"user_id"`
-	Fullame    string     `json:"fullname"`
-	Email      string     `json:"email"`
-	Phone      string     `json:"phone"`
-	DateBirth  *time.Time `json:"date_of_birth"`
-	Permission string     `json:"permission"`
+type UserInfoResponse struct {
+	UserId      uuid.UUID  `json:"user_id"`
+	FullName    string     `json:"fullname"`
+	Email       string     `json:"email"`
+	Phone       string     `json:"phone"`
+	DateOfBirth *time.Time `json:"date_of_birth"`
 }
 
 type ClaimsResponse struct {
@@ -50,6 +50,16 @@ type UserPublic struct {
 	Fullname string `json:"fullname"`
 }
 
-type IDRequest struct {
-	IDs []uint `json:"ids"`
+type UserInformationUpdateReq struct {
+	FullName    *string    `json:"fullname"`
+	Email       *string    `json:"email"`
+	Phone       *string    `json:"phone"`
+	DateOfBirth *time.Time `json:"date_of_birth"`
+}
+type UserInformationUpdateRes struct {
+	UserId      uuid.UUID  `json:"user_id"`
+	FullName    string     `json:"fullname"`
+	Email       string     `json:"email"`
+	Phone       string     `json:"phone"`
+	DateOfBirth *time.Time `json:"date_of_birth"`
 }

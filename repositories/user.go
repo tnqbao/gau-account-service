@@ -83,6 +83,19 @@ func GetUserInfoById(id uuid.UUID, c *gin.Context) (*models.UserInformation, err
 	return &userInfo, nil
 }
 
+func UpdateUserInfoById(id uuid.UUID, userInfo *models.UserInformation, c *gin.Context) (*models.UserInformation, error) {
+	db := c.MustGet("db").(*gorm.DB)
+	var existingUserInfo models.UserInformation
+	if err := db.Where("user_id = ?", id).First(&existingUserInfo).Error; err != nil {
+		return nil, fmt.Errorf("error finding user info with id %s: %v", id, err)
+	}
+
+	if err := db.Model(&existingUserInfo).Updates(userInfo).Error; err != nil {
+		return nil, fmt.Errorf("error updating user info with id %s: %v", id, err)
+	}
+	return &existingUserInfo, nil
+}
+
 func GetUserCredentialByEmail(email string, c *gin.Context) (*models.UserCredentials, error) {
 	db := c.MustGet("db").(*gorm.DB)
 	var userCredential models.UserCredentials
@@ -130,4 +143,52 @@ func GetUserByIdentifierAndPassword(identifier, identifierType, hashedPassword s
 	}
 
 	return &userInfo, nil
+}
+
+func UpdateEmailById(id uuid.UUID, newEmail string, c *gin.Context) error {
+	db := c.MustGet("db").(*gorm.DB)
+	var userCredential models.UserCredentials
+
+	if err := db.Where("user_id = ?", id).First(&userCredential).Error; err != nil {
+		return fmt.Errorf("error finding user credential with id %s: %v", id, err)
+	}
+
+	userCredential.Email = &newEmail
+	if err := db.Save(&userCredential).Error; err != nil {
+		return fmt.Errorf("error updating email for user credential with id %s: %v", id, err)
+	}
+
+	return nil
+}
+
+func UpdatePhoneById(id uuid.UUID, newPhone string, c *gin.Context) error {
+	db := c.MustGet("db").(*gorm.DB)
+	var userCredential models.UserCredentials
+
+	if err := db.Where("user_id = ?", id).First(&userCredential).Error; err != nil {
+		return fmt.Errorf("error finding user credential with id %s: %v", id, err)
+	}
+
+	userCredential.Phone = &newPhone
+	if err := db.Save(&userCredential).Error; err != nil {
+		return fmt.Errorf("error updating phone for user credential with id %s: %v", id, err)
+	}
+
+	return nil
+}
+
+func UpdateUsernameById(id uuid.UUID, newUsername string, c *gin.Context) error {
+	db := c.MustGet("db").(*gorm.DB)
+	var userCredential models.UserCredentials
+
+	if err := db.Where("user_id = ?", id).First(&userCredential).Error; err != nil {
+		return fmt.Errorf("error finding user credential with id %s: %v", id, err)
+	}
+
+	userCredential.Username = &newUsername
+	if err := db.Save(&userCredential).Error; err != nil {
+		return fmt.Errorf("error updating username for user credential with id %s: %v", id, err)
+	}
+
+	return nil
 }
