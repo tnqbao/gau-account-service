@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run migrations for the application
 echo "Running migrations..."
-migrate -database "$POSTGRES_URL" -path migrations up
+migrate -database "$PGPOOL_URL" -path migrations up
 if [ $? -ne 0 ]; then
     echo "Migrations failed. Exiting."
     exit 1
