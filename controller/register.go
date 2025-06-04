@@ -36,7 +36,7 @@ func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 	}
 
 	user := models.User{
-		UserId:      uuid.New(),
+		UserID:      uuid.New(),
 		Username:    req.Username,
 		Password:    &req.Password,
 		Email:       req.Email,
