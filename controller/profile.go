@@ -3,8 +3,10 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/tnqbao/gau-account-service/models"
 	"github.com/tnqbao/gau-account-service/providers"
 	"github.com/tnqbao/gau-account-service/repositories"
+	"net/http"
 )
 
 func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
@@ -33,7 +35,7 @@ func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
 	}
 
 	UserInfoResponse := providers.UserInfoResponse{
-		UserId:      userInfo.UserId,
+		UserId:      userInfo.UserID,
 		FullName:    *userInfo.FullName,
 		Email:       *userInfo.Email,
 		Phone:       *userInfo.Phone,
@@ -47,53 +49,53 @@ func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
 func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 	id := c.Param("user_id")
 	if id == "" {
-		c.JSON(400, gin.H{"error": "User ID is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID is required"})
 		return
 	}
 
-	userId, err := uuid.Parse(id)
+	userID, err := uuid.Parse(id)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "Invalid User ID format"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid User ID format"})
 		return
 	}
 
-	var userInfo providers.UserInformationUpdateReq
-	if err := c.ShouldBindJSON(&userInfo); err != nil {
-		c.JSON(400, gin.H{"error": "Invalid request format: " + err.Error()})
+	var req providers.UserInformationUpdateReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
 		return
 	}
 
-	user, err := repositories.GetUserInfoById(userId, c)
+	user, err := repositories.GetUserById(userID, c)
 	if err != nil {
+		status := http.StatusInternalServerError
+		errMsg := "Internal server error: " + err.Error()
 		if err.Error() == "record not found" {
-			c.JSON(404, gin.H{"error": "User not found"})
-		} else {
-			c.JSON(500, gin.H{"error": "Internal server error: " + err.Error()})
+			status = http.StatusNotFound
+			errMsg = "User not found"
 		}
+		c.JSON(status, gin.H{"error": errMsg})
 		return
 	}
 
-	if err := ctrl.updateEmail(userId, userInfo.Email, c); err != nil {
-		return
-	}
-	if err := ctrl.updatePhone(userId, userInfo.Phone, c); err != nil {
-		return
-	}
-
-	if userInfo.FullName != nil {
-		user.FullName = userInfo.FullName
-	}
-	if userInfo.DateOfBirth != nil {
-		user.DateOfBirth = userInfo.DateOfBirth
+	updateData := &models.User{
+		UserID:      user.UserID,
+		Username:    req.Username,
+		FullName:    providers.CheckNullString(req.FullName),
+		Email:       providers.CheckNullString(req.Email),
+		Phone:       providers.CheckNullString(req.Phone),
+		DateOfBirth: req.DateOfBirth,
+		Gender:      req.Gender,
+		FacebookURL: providers.CheckNullString(req.FacebookURL),
+		GithubURL:   providers.CheckNullString(req.GitHubURL),
 	}
 
-	updatedUser, err := repositories.UpdateUserInfoById(userId, user, c)
+	updatedUser, err := repositories.UpdateUser(updateData, c)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "Internal server error: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "User information updated successfully", "user_info": updatedUser})
+	c.JSON(http.StatusOK, gin.H{"message": "User information updated successfully", "user_info": updatedUser})
 }
 
 //
