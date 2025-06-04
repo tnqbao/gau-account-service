@@ -3,6 +3,7 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/models"
 	"github.com/tnqbao/gau-account-service/providers"
 	"github.com/tnqbao/gau-account-service/repositories"
@@ -60,6 +61,7 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 	refreshTokenExpiry := time.Now().Add(30 * 24 * time.Hour)
 
 	refreshTokenModel := &models.RefreshToken{
+		ID:        uuid.New().String(),
 		UserID:    user.UserID,
 		Token:     refreshTokenHashed,
 		DeviceID:  c.GetHeader("X-Device-ID"),
