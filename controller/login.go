@@ -3,7 +3,9 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/tnqbao/gau-account-service/models"
 	"github.com/tnqbao/gau-account-service/providers"
+	"github.com/tnqbao/gau-account-service/repositories"
 	"log"
 	"net/http"
 	"time"
@@ -12,7 +14,7 @@ import (
 func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 	var req providers.ClientRequestLogin
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Println("UserRequest binding error:", err)
+		log.Println("Binding error:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
 		return
 	}
@@ -27,36 +29,57 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	var expirationTime time.Time
+
+	// === Access Token ===
+	accessTokenDuration := 15 * time.Minute
 	if req.KeepLogin != nil && *req.KeepLogin == "true" {
-		expirationTime = time.Now().Add(7 * 24 * time.Hour)
-	} else {
-		expirationTime = time.Now().Add(15 * time.Minute)
+		accessTokenDuration = 7 * 24 * time.Hour // 7 days
 	}
+	accessTokenExpiry := time.Now().Add(accessTokenDuration)
 
 	claims := &ClaimsResponse{
-		UserID:         user.UserId,
+		UserID:         user.UserID,
 		FullName:       *user.FullName,
 		UserPermission: user.Permission,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			ExpiresAt: jwt.NewNumericDate(accessTokenExpiry),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 
-	token, err := ctrl.CreateAuthToken(*claims)
+	accessToken, err := ctrl.CreateAuthToken(*claims)
 	if err != nil {
-		log.Println("Error creating auth token:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cannot create auth token: " + err.Error()})
+		log.Println("Failed to create access token:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create access token"})
 		return
 	}
 
-	var timeExpired int
-	if req.KeepLogin != nil && *req.KeepLogin == "true" {
-		timeExpired = 3600 * 24 * 30
-	} else {
-		timeExpired = 0
+	// === Refresh Token ===
+	refreshTokenPlain := ctrl.GenerateRefreshToken()
+	refreshTokenHashed := ctrl.hashToken(refreshTokenPlain)
+	refreshTokenExpiry := time.Now().Add(30 * 24 * time.Hour)
+
+	refreshTokenModel := &models.RefreshToken{
+		UserID:    user.UserID,
+		Token:     refreshTokenHashed,
+		DeviceID:  c.GetHeader("X-Device-ID"),
+		ExpiresAt: refreshTokenExpiry,
 	}
 
-	ctrl.SetAuthCookie(c, token, timeExpired)
-	c.JSON(http.StatusOK, gin.H{"token": token, "user": user})
+	if err := repositories.CreateRefreshToken(refreshTokenModel, c); err != nil {
+		log.Println("Failed to save refresh token:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not store refresh token"})
+		return
+	}
+
+	// === Set Cookies  ===
+	ctrl.SetAuthCookie(c, accessToken, int(accessTokenDuration.Seconds()))
+	ctrl.SetRefreshCookie(c, refreshTokenPlain, int((30 * 24 * time.Hour).Seconds()))
+
+	// === Response ===
+	c.JSON(http.StatusOK, gin.H{
+		"token":         accessToken,
+		"refresh_token": refreshTokenPlain,
+		"user":          user,
+	})
 }

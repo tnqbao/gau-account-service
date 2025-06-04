@@ -16,9 +16,9 @@ RUN apk add --no-cache \
     ca-certificates \
     curl \
     && curl -L https://github.com/golang-migrate/migrate/releases/download/v4.18.3/migrate.linux-amd64.tar.gz \
-    | tar xvz -C /tmp && \
-    mv /tmp/migrate /usr/local/bin/migrate && \
-    chmod +x /usr/local/bin/migrate \
+    | tar xvz -C /tmp \
+    && mv /tmp/migrate /usr/local/bin/migrate \
+    && chmod +x /usr/local/bin/migrate
 
 COPY . .
 COPY --from=builder /gau_account/gau-account-service.bin .
