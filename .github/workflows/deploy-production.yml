@@ -29,14 +29,14 @@ jobs:
         with:
           context: .
           push: true
-          tags: iamqbao/gau_user_service:latest
+          tags: iamqbao/gau_account_service:latest
 
-      - name: Trigger deployment via SSH
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ~/docker-services/base-application-zone
-            sh restart_gau_user_service.sh
+#      - name: Trigger deployment via SSH
+#        uses: appleboy/ssh-action@master
+#        with:
+#          host: ${{ secrets.SERVER_HOST }}
+#          username: ${{ secrets.SERVER_USER }}
+#          key: ${{ secrets.SSH_PRIVATE_KEY }}
+#          script: |
+#            cd ~/docker-services/base-application-zone
+#            sh restart_gau_user_service.sh

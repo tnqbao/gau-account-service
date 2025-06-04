@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/tnqbao/gau_user_service/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -35,7 +34,6 @@ func InitDB() *gorm.DB {
 
 	log.Println("Database connected")
 
-	err = DB.AutoMigrate(&models.UserInformation{}, &models.UserAuthentication{})
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}

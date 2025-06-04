@@ -45,3 +45,34 @@ func CheckNullString(str *string) *string {
 	}
 	return str
 }
+
+func IsValidEmail(email string) bool {
+	// Simple regex for email validation
+	if len(email) < 3 || len(email) > 254 {
+		return false
+	}
+	at := 0
+	for i, char := range email {
+		if char == '@' {
+			at++
+			if at > 1 || i == 0 || i == len(email)-1 {
+				return false
+			}
+		} else if char == '.' && (i == 0 || i == len(email)-1 || email[i-1] == '@') {
+			return false
+		}
+	}
+	return at == 1
+}
+
+func IsValidPhone(phone string) bool {
+	if len(phone) < 10 || len(phone) > 15 {
+		return false
+	}
+	for _, char := range phone {
+		if char < '0' || char > '9' {
+			return false
+		}
+	}
+	return true
+}

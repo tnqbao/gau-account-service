@@ -10,3 +10,9 @@ func TestDeployment(c *gin.Context) {
 		"message": "Checked Deployment: " + time.Now().String(),
 	})
 }
+
+func CheckHealth(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"message": "Checked Health: " + time.Now().String(),
+	})
+}
