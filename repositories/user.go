@@ -46,7 +46,7 @@ func GetUserById(id uuid.UUID, c *gin.Context) (*models.User, error) {
 	return &user, nil
 }
 
-func GetUserByIdentifierAndPassword(identifier, identifierType, hashedPassword string, c *gin.Context) (*models.User, error) {
+func GetUserByIdentifierAndPassword(identifierType, identifier, hashedPassword string, c *gin.Context) (*models.User, error) {
 	db := c.MustGet("db").(*gorm.DB)
 	var userInfo models.User
 
