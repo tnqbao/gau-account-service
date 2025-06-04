@@ -43,11 +43,15 @@ func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
 	}
 
 	UserInfoResponse := providers.UserInfoResponse{
-		UserId:      userInfo.UserID,
-		FullName:    *userInfo.FullName,
-		Email:       *userInfo.Email,
-		Phone:       *userInfo.Phone,
-		DateOfBirth: userInfo.DateOfBirth,
+		UserId:          userInfo.UserID,
+		FullName:        *providers.CheckNullString(userInfo.FullName),
+		Email:           *providers.CheckNullString(userInfo.Email),
+		Phone:           *providers.CheckNullString(userInfo.Phone),
+		GithubUrl:       *providers.CheckNullString(userInfo.GithubURL),
+		FacebookUrl:     *providers.CheckNullString(userInfo.FacebookURL),
+		IsEmailVerified: userInfo.IsEmailVerified,
+		IsPhoneVerified: userInfo.IsPhoneVerified,
+		DateOfBirth:     userInfo.DateOfBirth,
 	}
 	c.JSON(200, gin.H{
 		"user_info": UserInfoResponse,

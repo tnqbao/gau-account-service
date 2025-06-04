@@ -7,11 +7,15 @@ import (
 )
 
 type UserInfoResponse struct {
-	UserId      uuid.UUID  `json:"user_id"`
-	FullName    string     `json:"fullname"`
-	Email       string     `json:"email"`
-	Phone       string     `json:"phone"`
-	DateOfBirth *time.Time `json:"date_of_birth"`
+	UserId          uuid.UUID  `json:"user_id"`
+	FullName        string     `json:"fullname,omitempty"`
+	Email           string     `json:"email,omitempty"`
+	Phone           string     `json:"phone,omitempty"`
+	DateOfBirth     *time.Time `json:"date_of_birth,omitempty"`
+	GithubUrl       string     `json:"github_url,omitempty"`
+	FacebookUrl     string     `json:"facebook_url,omitempty"`
+	IsEmailVerified bool       `json:"is_email_verified"`
+	IsPhoneVerified bool       `json:"is_phone_verified"`
 }
 
 type ClaimsResponse struct {
