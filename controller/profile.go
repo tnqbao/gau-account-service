@@ -10,7 +10,7 @@ import (
 )
 
 func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
-	id := c.Param("user_id")
+	id := c.MustGet("user_id").(string)
 	if id == "" {
 		c.JSON(400, gin.H{"error": "User ID is required"})
 		return
