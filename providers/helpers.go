@@ -39,11 +39,11 @@ func FormatStringToDate(date *string) *time.Time {
 	return &parsedDate
 }
 
-func CheckNullString(str *string) *string {
+func CheckNullString(str *string) string {
 	if str == nil || *str == "" {
-		return nil
+		return ""
 	}
-	return str
+	return *str
 }
 
 func IsValidEmail(email string) bool {

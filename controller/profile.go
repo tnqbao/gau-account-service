@@ -44,11 +44,11 @@ func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
 
 	UserInfoResponse := providers.UserInfoResponse{
 		UserId:          userInfo.UserID,
-		FullName:        *providers.CheckNullString(userInfo.FullName),
-		Email:           *providers.CheckNullString(userInfo.Email),
-		Phone:           *providers.CheckNullString(userInfo.Phone),
-		GithubUrl:       *providers.CheckNullString(userInfo.GithubURL),
-		FacebookUrl:     *providers.CheckNullString(userInfo.FacebookURL),
+		FullName:        providers.CheckNullString(userInfo.FullName),
+		Email:           providers.CheckNullString(userInfo.Email),
+		Phone:           providers.CheckNullString(userInfo.Phone),
+		GithubUrl:       providers.CheckNullString(userInfo.GithubURL),
+		FacebookUrl:     providers.CheckNullString(userInfo.FacebookURL),
 		IsEmailVerified: userInfo.IsEmailVerified,
 		IsPhoneVerified: userInfo.IsPhoneVerified,
 		DateOfBirth:     userInfo.DateOfBirth,
@@ -92,13 +92,13 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 	updateData := &models.User{
 		UserID:      user.UserID,
 		Username:    req.Username,
-		FullName:    providers.CheckNullString(req.FullName),
-		Email:       providers.CheckNullString(req.Email),
-		Phone:       providers.CheckNullString(req.Phone),
+		FullName:    req.FullName,
+		Email:       req.Email,
+		Phone:       req.Phone,
 		DateOfBirth: req.DateOfBirth,
 		Gender:      req.Gender,
-		FacebookURL: providers.CheckNullString(req.FacebookURL),
-		GithubURL:   providers.CheckNullString(req.GitHubURL),
+		FacebookURL: req.FacebookURL,
+		GithubURL:   req.GitHubURL,
 	}
 
 	updatedUser, err := repositories.UpdateUser(updateData, c)
