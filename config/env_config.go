@@ -12,6 +12,7 @@ type EnvConfig struct {
 		Database string
 		Username string
 		Password string
+		Port     string
 	}
 	JWT struct {
 		SecretKey string
@@ -33,10 +34,11 @@ func LoadEnvConfig() *EnvConfig {
 	var config EnvConfig
 
 	// Postgres
-	config.Postgres.HOST = os.Getenv("POSTGRES_HOST")
-	config.Postgres.Database = os.Getenv("POSTGRES_DB")
-	config.Postgres.Username = os.Getenv("POSTGRES_USERNAME")
-	config.Postgres.Password = os.Getenv("POSTGRES_PASSWORD")
+	config.Postgres.HOST = os.Getenv("PGPOOL_HOST")
+	config.Postgres.Database = os.Getenv("PGPOOL_DB")
+	config.Postgres.Username = os.Getenv("PGPOOL_USERNAME")
+	config.Postgres.Password = os.Getenv("PGPOOL_PASSWORD")
+	config.Postgres.Port = os.Getenv("PGPOOL_PORT")
 
 	// JWT
 	config.JWT.SecretKey = os.Getenv("JWT_SECRET_KEY")
@@ -49,7 +51,7 @@ func LoadEnvConfig() *EnvConfig {
 	}
 
 	// CORS
-	config.CORS.AllowDomains = os.Getenv("LIST_DOMAIN")
+	config.CORS.AllowDomains = os.Getenv("ALLOWED_DOMAINS")
 	config.CORS.GlobalDomain = os.Getenv("GLOBAL_DOMAIN")
 
 	// Redis
@@ -59,6 +61,6 @@ func LoadEnvConfig() *EnvConfig {
 	if config.Redis.Database == 0 {
 		config.Redis.Database = 0 // Default to 0 if not set
 	}
-	
+
 	return &config
 }

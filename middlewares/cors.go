@@ -10,7 +10,7 @@ import (
 
 func CORSMiddleware(config *config.EnvConfig) gin.HandlerFunc {
 	domains := config.CORS.AllowDomains
-	domainList := strings.Split(domains, "^")
+	domainList := strings.Split(domains, ",")
 	return cors.New(cors.Config{
 		AllowOrigins:     domainList,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
