@@ -29,7 +29,13 @@ func AuthMiddleware(config *config.EnvConfig) gin.HandlerFunc {
 			return
 		}
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			if userId, ok := claims["user_id"].(uuid.UUID); ok {
+			if userIDStr, ok := claims["user_id"].(string); ok {
+				userId, err := uuid.Parse(userIDStr)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user_id format"})
+					c.Abort()
+					return
+				}
 				c.Set("user_id", userId)
 			} else {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user_id format"})

@@ -8,7 +8,6 @@ import (
 )
 
 func (ctrl *Controller) Logout(c *gin.Context) {
-	// Lấy refresh token từ header hoặc cookie
 	refreshToken := c.GetHeader("X-Refresh-Token")
 	if refreshToken == "" {
 		refreshToken, _ = c.Cookie("refresh_token")
@@ -20,7 +19,7 @@ func (ctrl *Controller) Logout(c *gin.Context) {
 
 		if err := repositories.DeleteRefreshTokenByTokenAndDevice(hashedToken, deviceID, c); err != nil {
 			log.Println("Error deleting refresh token:", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not log out, please try again later"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		}
 	}
 

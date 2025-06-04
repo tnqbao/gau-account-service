@@ -82,6 +82,5 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"token":         accessToken,
 		"refresh_token": refreshTokenPlain,
-		"user":          user,
 	})
 }
