@@ -22,7 +22,7 @@ func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
 	}
 
 	// Fetch user information from the repository
-	userInfo, err := repositories.GetUserInfoById(userId, c)
+	userInfo, err := repositories.GetUserById(userId, c)
 	if err != nil {
 		if err.Error() == "record not found" {
 			c.JSON(404, gin.H{"error": "User not found"})

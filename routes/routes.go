@@ -21,13 +21,22 @@ func SetupRouter(db *gorm.DB, config *config.EnvConfig) *gin.Engine {
 		c.Set("db", db)
 		c.Next()
 	})
-	apiRoutes := r.Group("/api/account/v2/")
+	apiRoutes := r.Group("/api/account/v2")
 	{
 		identifierRoutes := apiRoutes.Group("/basic")
 		{
 			identifierRoutes.POST("/register", ctrl.RegisterWithIdentifierAndPassword)
 			identifierRoutes.POST("/login", ctrl.LoginWithIdentifierAndPassword)
 		}
+
+		profileRoutes := apiRoutes.Group("/profile")
+		{
+			profileRoutes.Use(useMiddlewares.AuthMiddleware)
+			profileRoutes.GET("/", ctrl.GetAccountInfo)
+			profileRoutes.PUT("/", ctrl.UpdateAccountInfo)
+		}
+
+		apiRoutes.POST("/logout", ctrl.Logout, useMiddlewares.AuthMiddleware)
 
 		//	authedRoutes := userRoutes.Group("/")
 		//	{

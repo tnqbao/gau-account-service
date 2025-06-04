@@ -16,34 +16,27 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
 		return
 	}
-	if (req.Username == nil && req.Email == nil && req.Phone == nil) || req.Password == nil {
+
+	if !isValidLoginRequest(req) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Email/Username/Phone and Password are required"})
 		return
 	}
 
-	var user providers.ServerResponseLogin
-	var err error
-
-	hashedPassword := providers.HashPassword(*req.Password)
-	if req.Username != nil {
-		user, err = verifyCredentialsByUsername(c, *req.Username, hashedPassword)
-	} else if req.Email != nil {
-		user, err = verifyCredentialsByEmail(c, *req.Email, hashedPassword)
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Email/Phone/Username and Password are required"})
-		return
-	}
-
+	user, err := ctrl.AuthenticateUser(&req, c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Email/Phone/Username or password"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
+	var expirationTime time.Time
+	if req.KeepLogin != nil && *req.KeepLogin == "true" {
+		expirationTime = time.Now().Add(7 * 24 * time.Hour)
+	} else {
+		expirationTime = time.Now().Add(15 * time.Minute)
+	}
 
-	expirationTime := time.Now().Add(7 * 24 * time.Hour)
-
-	claims := &providers.ClaimsResponse{
+	claims := &ClaimsResponse{
 		UserID:         user.UserId,
-		FullName:       user.FullName,
+		FullName:       *user.FullName,
 		UserPermission: user.Permission,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),

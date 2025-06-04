@@ -12,13 +12,13 @@ import (
 )
 
 func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
-	var req providers.UserRegistryCredentialReq
+	var req UserRegistryReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Println("UserRequest binding error:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "UserRequest binding error: " + err.Error()})
 		return
 	}
-	*req.Password = providers.HashPassword(*req.Password)
+	req.Password = providers.HashPassword(req.Password)
 
 	if req.Email != nil && !providers.IsValidEmail(*req.Email) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email format"})
@@ -30,38 +30,26 @@ func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 		return
 	}
 
-	if (req.FullName == nil && req.Email == nil && req.Phone == nil) || req.Password == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Email/Username and Password must be provided"})
+	if (req.FullName == "" && req.Email == nil && req.Phone == nil) || req.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required fields: FullName/Email/Phone, or Password"})
 		return
 	}
 
-	log.Println("Parsed Request:", req)
-	userCredentials := models.UserCredentials{
-		UserId:     uuid.New(),
-		Username:   &req.Username,
-		Password:   req.Password,
-		Email:      req.Email,
-		Phone:      req.Phone,
-		Permission: "member",
+	user := models.User{
+		UserId:      uuid.New(),
+		Username:    req.Username,
+		Password:    &req.Password,
+		Email:       req.Email,
+		Phone:       req.Phone,
+		Permission:  "member",
+		DateOfBirth: &req.DateOfBirth,
+		FullName:    &req.FullName,
+		Gender:      &req.Gender,
 	}
 
-	if err := repositories.CreateUserCredential(&userCredentials, c); err != nil {
-		log.Println("Error creating user credentials:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cannot create user credentials: " + err.Error()})
-		return
-	}
-
-	userInfo := models.UserInformation{
-		UserId:      userCredentials.UserId,
-		FullName:    req.FullName,
-		Email:       providers.CheckNullString(req.Email),
-		Phone:       providers.CheckNullString(req.Phone),
-		DateOfBirth: req.DateOfBirth,
-	}
-
-	if err := repositories.CreateUserInfo(&userInfo, c); err != nil {
-		log.Println("Error creating user information:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cannot create user information: " + err.Error()})
+	if err := repositories.CreateUser(&user, c); err != nil {
+		log.Println("Error creating user :", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
