@@ -10,26 +10,34 @@ import (
 )
 
 func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
-	id := c.MustGet("user_id").(string)
-	if id == "" {
+	userId := c.MustGet("user_id")
+	if userId == nil {
 		c.JSON(400, gin.H{"error": "User ID is required"})
 		return
 	}
 
-	// Convert the user ID to a UUID
-	userId, err := uuid.Parse(id)
-	if err != nil {
-		c.JSON(400, gin.H{"error": "Invalid User ID format"})
+	var uuidUserId uuid.UUID
+	switch v := userId.(type) {
+	case string:
+		parsed, err := uuid.Parse(v)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid User ID format"})
+			return
+		}
+		uuidUserId = parsed
+	case uuid.UUID:
+		uuidUserId = v
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid User ID type"})
 		return
 	}
 
-	// Fetch user information from the repository
-	userInfo, err := repositories.GetUserById(userId, c)
+	userInfo, err := repositories.GetUserById(uuidUserId, c)
 	if err != nil {
 		if err.Error() == "record not found" {
 			c.JSON(404, gin.H{"error": "User not found"})
 		} else {
-			c.JSON(500, gin.H{"error": "Internal server error: " + err.Error()})
+			c.JSON(500, gin.H{"error": "Internal server error"})
 		}
 		return
 	}
