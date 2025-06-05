@@ -14,10 +14,8 @@ func CreateRefreshToken(token *models.RefreshToken, c *gin.Context) error {
 	return nil
 }
 
-func DeleteRefreshTokenByTokenAndDevice(token string, deviceID string, c *gin.Context) error {
+func DeleteRefreshTokenByTokenAndDevice(token string, deviceID string, c *gin.Context) (int64, error) {
 	db := c.MustGet("db").(*gorm.DB)
-	if err := db.Where("token = ? AND device_id = ?", token, deviceID).Delete(&models.RefreshToken{}).Error; err != nil {
-		return err
-	}
-	return nil
+	result := db.Where("token = ? AND device_id = ?", token, deviceID).Delete(&models.RefreshToken{})
+	return result.RowsAffected, result.Error
 }

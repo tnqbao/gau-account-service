@@ -17,10 +17,20 @@ func (ctrl *Controller) Logout(c *gin.Context) {
 		hashedToken := ctrl.hashToken(refreshToken)
 		deviceID := c.GetHeader("X-Device-ID")
 
-		if err := repositories.DeleteRefreshTokenByTokenAndDevice(hashedToken, deviceID, c); err != nil {
+		// Gọi hàm Delete, giờ trả về cả RowsAffected
+		rowsAffected, err := repositories.DeleteRefreshTokenByTokenAndDevice(hashedToken, deviceID, c)
+		if err != nil {
 			log.Println("Error deleting refresh token:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			return
 		}
+		if rowsAffected == 0 {
+			log.Printf("No refresh token found for hash: %s and deviceID: %s\n", hashedToken, deviceID)
+		} else {
+			log.Printf("Refresh token deleted: hash=%s, deviceID=%s\n", hashedToken, deviceID)
+		}
+	} else {
+		log.Println("No refresh token provided in header or cookie")
 	}
 
 	c.SetCookie("auth_token", "", -1, "/", "", false, true)
