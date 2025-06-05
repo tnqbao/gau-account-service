@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gau-account-service-config
+  namespace: gau-${DEPLOY_ENV}-env
+  labels:
+    app: gau-account-service
+data:
+  PGPOOL_HOST: "${PGPOOL_HOST}"
+  PGPOOL_DBNAME: "${PGPOOL_DB}"
+  PGPOOL_USER: "${PGPOOL_USER}"
+  PGPOOL_PASSWORD: "${PGPOOL_PASSWORD}"
+  PGPOOL_PORT: "${PGPOOL_PORT}"
+  PGPOOL_URL: "${PGPOOL_URL}"
+
+  JWT_SECRET_KEY: "${JWT_SECRET_KEY}"
+  JWT_ALGORITHM: "${JWT_ALGORITHM}"
+  JWT_EXPIRE: "${JWT_EXPIRATION}"
+
+  GLOBAL_DOMAIN: "${GLOBAL_DOMAIN}"
+  ALLOWED_DOMAINS: "${ALLOWED_DOMAINS}"
+
+  REDIS_ADDR: "${REDIS_ADDR}"
+  REDIS_PASSWORD: "${REDIS_PASSWORD}"
+  REDIS_DB: "${REDIS_DB}"
+
+  GIN_MODE: "release"
+  SERVICE_NAME: "gau_account_service"
+  DEPLOY_ENV: "${DEPLOY_ENV}"

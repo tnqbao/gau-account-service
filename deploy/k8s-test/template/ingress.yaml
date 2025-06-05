@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gau-account-service-ingress
+  namespace: gau-${DEPLOY_ENV}-env
+  labels:
+    app: gau-account-service
+  # annotations:
+  #   nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: ${INGRESS_HOST}
+      http:
+        paths:
+          - path: /api/account/v2
+            pathType: Prefix
+            backend:
+              service:
+                name: gau-account-api-service
+                port:
+                  number: 8080
