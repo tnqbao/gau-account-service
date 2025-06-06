@@ -1,3 +1,20 @@
+# Ignore environment files for security
 .env
-./cotrollers/encrypt/test.go
-app
+.env.*
+
+# Ignore test files or files not related to main code
+controllers/encrypt/test.go
+
+# Ignore app directory if not necessary in the repository
+app/
+
+# Ignore log, temporary, or backup files
+*.log
+*.tmp
+*.bak
+
+# Ignore GoLand (or other IDE) configuration directory
+.idea/
+
+# Ignore pkg directory if not necessary in the repository
+pkg/

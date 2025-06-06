@@ -2,30 +2,14 @@ package middlewares
 
 import (
 	"errors"
-	"net/http"
-	"os"
-	"strings"
-	"time"
-
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"github.com/tnqbao/gau-account-service/config"
+	"net/http"
 )
 
-func CORSMiddleware() gin.HandlerFunc {
-	domains := os.Getenv("LIST_DOMAIN")
-	domainList := strings.Split(domains, "^")
-	return cors.New(cors.Config{
-		AllowOrigins:     domainList,
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length", "Authorization", "Set-Cookie"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	})
-}
-
-func AuthMiddleware() gin.HandlerFunc {
+func AuthMiddleware(config *config.EnvConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString, err := c.Cookie("auth_token")
 		if err != nil {
@@ -38,15 +22,21 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		token, err := validateToken(tokenString)
+		token, err := validateToken(tokenString, config)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			c.Abort()
 			return
 		}
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			if userIdFloat, ok := claims["user_id"].(float64); ok {
-				c.Set("user_id", uint(userIdFloat))
+			if userIDStr, ok := claims["user_id"].(string); ok {
+				userId, err := uuid.Parse(userIDStr)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user_id format"})
+					c.Abort()
+					return
+				}
+				c.Set("user_id", userId)
 			} else {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user_id format"})
 				c.Abort()
@@ -67,8 +57,8 @@ func AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func validateToken(tokenString string) (*jwt.Token, error) {
-	jwtSecret := []byte(os.Getenv("JWT_SECRET"))
+func validateToken(tokenString string, config *config.EnvConfig) (*jwt.Token, error) {
+	jwtSecret := []byte(config.JWT.SecretKey)
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")

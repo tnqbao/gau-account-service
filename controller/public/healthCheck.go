@@ -1,4 +1,4 @@
-package api_user
+package public
 
 import (
 	"net/http"
@@ -7,6 +7,6 @@ import (
 )
 
 func HealthCheck(c *gin.Context) {
-	c.JSON(http.StatusOK, "Hello World")
+	c.JSON(http.StatusOK, gin.H{"status": 200, "message:": "Hello World"})
 	return
 }

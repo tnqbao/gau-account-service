@@ -1,9 +1,9 @@
 name: deploy-ci-cd
 
-on: 
+on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   build:
@@ -18,17 +18,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Set up environment variables
-        run: |
-            echo "GLOBAL_DOMAIN=${{ secrets.GLOBAL_DOMAIN }}" >> .env
-            echo "LIST_DOMAIN=${{ secrets.LIST_DOMAIN }}" >> .env
-            echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
-            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
-            echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
-            echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" >> .env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-            
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -40,7 +29,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: iamqbao/gau_user_service:latest
+          tags: iamqbao/gau_account_service:latest
 
       - name: Trigger deployment via SSH
         uses: appleboy/ssh-action@master
@@ -49,7 +38,5 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/.operator
-            sh restart_gau_user_service.sh
-            cd ~/gau
-            sh start.sh
+            cd ~/gau_platform/docker/base-application-zone
+            sh restart_gau_account_service.sh
