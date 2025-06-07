@@ -2,9 +2,8 @@ package controller
 
 import (
 	"github.com/google/uuid"
-	"github.com/tnqbao/gau-account-service/models"
-	"github.com/tnqbao/gau-account-service/providers"
 	"github.com/tnqbao/gau-account-service/repositories"
+	"github.com/tnqbao/gau-account-service/schemas"
 	"log"
 	"net/http"
 
@@ -18,14 +17,14 @@ func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "UserRequest binding error: " + err.Error()})
 		return
 	}
-	req.Password = providers.HashPassword(req.Password)
+	req.Password = ctrl.HashPassword(req.Password)
 
-	if req.Email != nil && !providers.IsValidEmail(*req.Email) {
+	if req.Email != nil && !ctrl.IsValidEmail(*req.Email) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email format"})
 		return
 	}
 
-	if req.Phone != nil && !providers.IsValidPhone(*req.Phone) {
+	if req.Phone != nil && !ctrl.IsValidPhone(*req.Phone) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid phone format"})
 		return
 	}
@@ -35,7 +34,7 @@ func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 		return
 	}
 
-	user := models.User{
+	user := schemas.User{
 		UserID:      uuid.New(),
 		Username:    req.Username,
 		Password:    &req.Password,

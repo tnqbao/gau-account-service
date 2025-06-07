@@ -2,13 +2,13 @@ package controller
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/tnqbao/gau-account-service/models"
-	"github.com/tnqbao/gau-account-service/providers"
 	"github.com/tnqbao/gau-account-service/repositories"
+	"github.com/tnqbao/gau-account-service/schemas"
 	"time"
 )
 
@@ -34,12 +34,18 @@ func (ctrl *Controller) SetRefreshCookie(c *gin.Context, token string, timeExpir
 	c.SetCookie("refresh_token", token, timeExpired, "/", globalDomain, false, true)
 }
 
-func isValidLoginRequest(req providers.ClientRequestLogin) bool {
+func isValidLoginRequest(req ClientRequestLogin) bool {
 	return req.Password != nil && (req.Username != nil || req.Email != nil || req.Phone != nil)
 }
 
-func (ctrl *Controller) AuthenticateUser(req *providers.ClientRequestLogin, c *gin.Context) (*models.User, error) {
-	hashedPassword := providers.HashPassword(*req.Password)
+func (ctrl *Controller) HashPassword(password string) string {
+	hasher := sha256.New()
+	hasher.Write([]byte(password))
+	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func (ctrl *Controller) AuthenticateUser(req *ClientRequestLogin, c *gin.Context) (*schemas.User, error) {
+	hashedPassword := ctrl.HashPassword(*req.Password)
 
 	if req.Username != nil {
 		return repositories.GetUserByIdentifierAndPassword("username", *req.Username, hashedPassword, c)
@@ -69,4 +75,42 @@ func (ctrl *Controller) hashToken(token string) string {
 	h := sha256.New()
 	h.Write([]byte(token))
 	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+func (ctrl *Controller) CheckNullString(str *string) string {
+	if str == nil || *str == "" {
+		return ""
+	}
+	return *str
+}
+
+func (ctrl *Controller) IsValidEmail(email string) bool {
+	// Simple regex for email validation
+	if len(email) < 3 || len(email) > 254 {
+		return false
+	}
+	at := 0
+	for i, char := range email {
+		if char == '@' {
+			at++
+			if at > 1 || i == 0 || i == len(email)-1 {
+				return false
+			}
+		} else if char == '.' && (i == 0 || i == len(email)-1 || email[i-1] == '@') {
+			return false
+		}
+	}
+	return at == 1
+}
+
+func (ctrl *Controller) IsValidPhone(phone string) bool {
+	if len(phone) < 10 || len(phone) > 15 {
+		return false
+	}
+	for _, char := range phone {
+		if char < '0' || char > '9' {
+			return false
+		}
+	}
+	return true
 }

@@ -4,16 +4,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/tnqbao/gau-account-service/models"
-	"github.com/tnqbao/gau-account-service/providers"
 	"github.com/tnqbao/gau-account-service/repositories"
+	"github.com/tnqbao/gau-account-service/schemas"
 	"log"
 	"net/http"
 	"time"
 )
 
 func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
-	var req providers.ClientRequestLogin
+	var req ClientRequestLogin
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Println("Binding error:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
@@ -60,7 +59,7 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 	refreshTokenHashed := ctrl.hashToken(refreshTokenPlain)
 	refreshTokenExpiry := time.Now().Add(30 * 24 * time.Hour)
 
-	refreshTokenModel := &models.RefreshToken{
+	refreshTokenModel := &schemas.RefreshToken{
 		ID:        uuid.New().String(),
 		UserID:    user.UserID,
 		Token:     refreshTokenHashed,
