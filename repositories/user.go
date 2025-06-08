@@ -46,6 +46,18 @@ func GetUserById(id uuid.UUID, c *gin.Context) (*schemas.User, error) {
 	return &user, nil
 }
 
+func GetUserByEmail(email string, c *gin.Context) (*schemas.User, error) {
+	db := c.MustGet("db").(*gorm.DB)
+	var userInfo schemas.User
+	if err := db.Where("email = ?", email).First(&userInfo).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("user not found with email: %s", email)
+		}
+		return nil, fmt.Errorf("error finding user with email %s: %v", email, err)
+	}
+	return &userInfo, nil
+}
+
 func GetUserByIdentifierAndPassword(identifierType, identifier, hashedPassword string, c *gin.Context) (*schemas.User, error) {
 	db := c.MustGet("db").(*gorm.DB)
 	var userInfo schemas.User

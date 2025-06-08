@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func (ctrl *Controller) CreateAuthToken(claims ClaimsResponse) (string, error) {
+func (ctrl *Controller) CreateAuthToken(claims ClaimsToken) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id":    claims.UserID,
 		"permission": claims.UserPermission,
@@ -34,7 +34,7 @@ func (ctrl *Controller) SetRefreshCookie(c *gin.Context, token string, timeExpir
 	c.SetCookie("refresh_token", token, timeExpired, "/", globalDomain, false, true)
 }
 
-func isValidLoginRequest(req ClientRequestLogin) bool {
+func isValidLoginRequest(req ClientRequestBasicLogin) bool {
 	return req.Password != nil && (req.Username != nil || req.Email != nil || req.Phone != nil)
 }
 
@@ -44,7 +44,7 @@ func (ctrl *Controller) HashPassword(password string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func (ctrl *Controller) AuthenticateUser(req *ClientRequestLogin, c *gin.Context) (*schemas.User, error) {
+func (ctrl *Controller) AuthenticateUser(req *ClientRequestBasicLogin, c *gin.Context) (*schemas.User, error) {
 	hashedPassword := ctrl.HashPassword(*req.Password)
 
 	if req.Username != nil {

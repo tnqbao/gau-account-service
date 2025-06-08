@@ -11,7 +11,7 @@ import (
 )
 
 func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
-	var req UserRegistryReq
+	var req UserBasicRegistryReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Println("UserRequest binding error:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "UserRequest binding error: " + err.Error()})

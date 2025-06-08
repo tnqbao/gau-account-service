@@ -1,9 +1,12 @@
 package dto
 
-type Google struct {
-	GoogleID    string `json:"sub" binding:"required"`
-	AccessToken string `json:"access_token" binding:"required"`
-	Email       string `json:"email" binding:"required"`
-	Name        string `json:"name" binding:"required"`
-	Picture     string `json:"picture" binding:"required"`
+type GoogleUserInfo struct {
+	Sub           string `json:"sub"`
+	Name          string `json:"name"`
+	GivenName     string `json:"given_name"`
+	FamilyName    string `json:"family_name"`
+	Picture       string `json:"picture"`
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	Locale        string `json:"locale"`
 }

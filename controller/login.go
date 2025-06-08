@@ -12,7 +12,7 @@ import (
 )
 
 func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
-	var req ClientRequestLogin
+	var req ClientRequestBasicLogin
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Println("Binding error:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
@@ -37,7 +37,7 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 	}
 	accessTokenExpiry := time.Now().Add(accessTokenDuration)
 
-	claims := &ClaimsResponse{
+	claims := &ClaimsToken{
 		UserID:         user.UserID,
 		FullName:       *user.FullName,
 		UserPermission: user.Permission,
