@@ -47,7 +47,7 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 		},
 	}
 
-	accessToken, err := ctrl.CreateAuthToken(*claims)
+	accessToken, err := ctrl.CreateAccessToken(*claims)
 	if err != nil {
 		log.Println("Failed to create access token:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create access token"})
@@ -79,7 +79,7 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 
 	// === Response ===
 	c.JSON(http.StatusOK, gin.H{
-		"token":         accessToken,
+		"access_token":  accessToken,
 		"refresh_token": refreshTokenPlain,
 	})
 }

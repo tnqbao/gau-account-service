@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func (ctrl *Controller) CreateAuthToken(claims ClaimsToken) (string, error) {
+func (ctrl *Controller) CreateAccessToken(claims ClaimsToken) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id":    claims.UserID,
 		"permission": claims.UserPermission,
@@ -55,16 +55,6 @@ func (ctrl *Controller) AuthenticateUser(req *ClientRequestBasicLogin, c *gin.Co
 		return repositories.GetUserByIdentifierAndPassword("phone", *req.Phone, hashedPassword, c)
 	}
 	return nil, fmt.Errorf("missing login identifier")
-}
-
-func (ctrl *Controller) GenerateAccessToken(userID string) (string, error) {
-	// sử dụng jwt-go
-	claims := jwt.MapClaims{
-		"user_id": userID,
-		"exp":     time.Now().Add(15 * time.Minute).Unix(),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(ctrl.config.JWT.SecretKey))
 }
 
 func (ctrl *Controller) GenerateRefreshToken() string {
