@@ -1,4 +1,4 @@
-package models
+package schemas
 
 import (
 	"github.com/google/uuid"
@@ -19,4 +19,5 @@ type User struct {
 	IsEmailVerified bool       `gorm:"default:false" json:"is_email_verified,omitempty"`
 	FacebookURL     *string    `gorm:"unique" json:"facebook_url,omitempty"`
 	GithubURL       *string    `gorm:"unique" json:"github_url,omitempty"`
+	ImageURL        *string    `json:"image_url,omitempty"`
 }

@@ -3,9 +3,8 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/tnqbao/gau-account-service/models"
-	"github.com/tnqbao/gau-account-service/providers"
 	"github.com/tnqbao/gau-account-service/repositories"
+	"github.com/tnqbao/gau-account-service/schemas"
 	"net/http"
 )
 
@@ -42,13 +41,13 @@ func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
 		return
 	}
 
-	UserInfoResponse := providers.UserInfoResponse{
+	UserInfoResponse := UserInfoResponse{
 		UserId:          userInfo.UserID,
-		FullName:        providers.CheckNullString(userInfo.FullName),
-		Email:           providers.CheckNullString(userInfo.Email),
-		Phone:           providers.CheckNullString(userInfo.Phone),
-		GithubUrl:       providers.CheckNullString(userInfo.GithubURL),
-		FacebookUrl:     providers.CheckNullString(userInfo.FacebookURL),
+		FullName:        ctrl.CheckNullString(userInfo.FullName),
+		Email:           ctrl.CheckNullString(userInfo.Email),
+		Phone:           ctrl.CheckNullString(userInfo.Phone),
+		GithubUrl:       ctrl.CheckNullString(userInfo.GithubURL),
+		FacebookUrl:     ctrl.CheckNullString(userInfo.FacebookURL),
 		IsEmailVerified: userInfo.IsEmailVerified,
 		IsPhoneVerified: userInfo.IsPhoneVerified,
 		DateOfBirth:     userInfo.DateOfBirth,
@@ -71,7 +70,7 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 		return
 	}
 
-	var req providers.UserInformationUpdateReq
+	var req UserInformationUpdateReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
 		return
@@ -89,7 +88,7 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 		return
 	}
 
-	updateData := &models.User{
+	updateData := &schemas.User{
 		UserID:      user.UserID,
 		Username:    req.Username,
 		FullName:    req.FullName,
@@ -113,7 +112,7 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 //
 //import (
 //	"github.com/gin-gonic/gin"
-//	"github.com/tnqbao/gau-account-service/models"
+//	"github.com/tnqbao/gau-account-service/schemas"
 //	"github.com/tnqbao/gau-account-service/providers"
 //	"gorm.io/gorm"
 //	"log"
@@ -131,7 +130,7 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 ////	}
 ////
 ////	err := db.Transaction(func(tx *gorm.DB) error {
-////		userAuth := models.{
+////		userAuth := schemas.{
 ////			Username:   userName,
 ////			Password:   r.Password,
 ////			Permission: "member",
@@ -141,7 +140,7 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 ////			return err
 ////		}
 ////
-////		userInfor := models.UserInformation{
+////		userInfor := schemas.UserInformation{
 ////			FullName:    r.Fullname,
 ////			Email:       providers.CheckNullString(r.Email),
 ////			Phone:       providers.CheckNullString(r.Phone),
@@ -193,8 +192,8 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 //		c.JSON(http.StatusForbidden, gin.H{"status": http.StatusForbidden, "error": "You don't have permission to access this resource!"})
 //		return
 //	}
-//	var user models.UserAuthentication
-//	var userInfo models.UserInformation
+//	var user schemas.UserAuthentication
+//	var userInfo schemas.UserInformation
 //	err = db.Transaction(func(tx *gorm.DB) error {
 //		if err := tx.First(&user, "user_id = ?", id).Error; err != nil {
 //			return err
@@ -227,8 +226,8 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 //		return
 //	}
 //
-//	var user models.UserAuthentication
-//	var userInfo models.UserInformation
+//	var user schemas.UserAuthentication
+//	var userInfo schemas.UserInformation
 //	err := db.Transaction(func(tx *gorm.DB) error {
 //		if err := tx.First(&user, "user_id = ?", tokenId).Error; err != nil {
 //			return err
@@ -267,12 +266,12 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 //	}
 //
 //	err := db.Transaction(func(tx *gorm.DB) error {
-//		if result := tx.Delete(&models.UserAuthentication{}, tokenId); result.Error != nil {
+//		if result := tx.Delete(&schemas.UserAuthentication{}, tokenId); result.Error != nil {
 //			return result.Error
 //		} else if result.RowsAffected == 0 {
 //			return gorm.ErrRecordNotFound
 //		}
-//		if err := tx.Delete(&models.UserInformation{}, tokenId).Error; err != nil {
+//		if err := tx.Delete(&schemas.UserInformation{}, tokenId).Error; err != nil {
 //			return err
 //		}
 //
@@ -305,14 +304,14 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 //		return
 //	}
 //
-//	userUpate := models.UserInformation{}
+//	userUpate := schemas.UserInformation{}
 //	if err := c.ShouldBindJSON(&userUpate); err != nil {
 //		log.Println("UserRequest binding error:", err)
 //		c.JSON(http.StatusBadRequest, gin.H{"error": "UserRequest binding error: " + err.Error()})
 //		return
 //	}
 //
-//	var userInfor models.UserInformation
+//	var userInfor schemas.UserInformation
 //
 //	err := db.Transaction(func(tx *gorm.DB) error {
 //		if err := tx.First(&userInfor, "user_id = ?", tokenIdUint).Error; err != nil {

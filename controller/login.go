@@ -4,16 +4,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/tnqbao/gau-account-service/models"
-	"github.com/tnqbao/gau-account-service/providers"
 	"github.com/tnqbao/gau-account-service/repositories"
+	"github.com/tnqbao/gau-account-service/schemas"
 	"log"
 	"net/http"
 	"time"
 )
 
 func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
-	var req providers.ClientRequestLogin
+	var req ClientRequestBasicLogin
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Println("Binding error:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
@@ -38,7 +37,7 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 	}
 	accessTokenExpiry := time.Now().Add(accessTokenDuration)
 
-	claims := &ClaimsResponse{
+	claims := &ClaimsToken{
 		UserID:         user.UserID,
 		FullName:       *user.FullName,
 		UserPermission: user.Permission,
@@ -48,7 +47,7 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 		},
 	}
 
-	accessToken, err := ctrl.CreateAuthToken(*claims)
+	accessToken, err := ctrl.CreateAccessToken(*claims)
 	if err != nil {
 		log.Println("Failed to create access token:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create access token"})
@@ -60,7 +59,7 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 	refreshTokenHashed := ctrl.hashToken(refreshTokenPlain)
 	refreshTokenExpiry := time.Now().Add(30 * 24 * time.Hour)
 
-	refreshTokenModel := &models.RefreshToken{
+	refreshTokenModel := &schemas.RefreshToken{
 		ID:        uuid.New().String(),
 		UserID:    user.UserID,
 		Token:     refreshTokenHashed,
@@ -80,7 +79,7 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 
 	// === Response ===
 	c.JSON(http.StatusOK, gin.H{
-		"token":         accessToken,
+		"access_token":  accessToken,
 		"refresh_token": refreshTokenPlain,
 	})
 }

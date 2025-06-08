@@ -7,17 +7,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/config"
 	"net/http"
+	"strings"
 )
 
 func AuthMiddleware(config *config.EnvConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenString, err := c.Cookie("auth_token")
-		if err != nil {
-			tokenString = c.GetHeader("Authorization")
-		}
-
+		tokenString := getTokenFromRequest(c)
 		if tokenString == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization cookie is required"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token is required"})
 			c.Abort()
 			return
 		}
@@ -28,47 +25,63 @@ func AuthMiddleware(config *config.EnvConfig) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			if userIDStr, ok := claims["user_id"].(string); ok {
-				userId, err := uuid.Parse(userIDStr)
-				if err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user_id format"})
-					c.Abort()
-					return
-				}
-				c.Set("user_id", userId)
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user_id format"})
-				c.Abort()
-				return
-			}
 
-			if permission, ok := claims["permission"].(string); ok {
-				c.Set("permission", permission)
-			} else {
-				c.Set("permission", "")
-			}
-		} else {
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok || !token.Valid {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort()
 			return
 		}
+
+		userIDStr, ok := claims["user_id"].(string)
+		if !ok {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user_id format"})
+			c.Abort()
+			return
+		}
+
+		userId, err := uuid.Parse(userIDStr)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user_id format"})
+			c.Abort()
+			return
+		}
+		c.Set("user_id", userId)
+
+		permission, ok := claims["permission"].(string)
+		if !ok {
+			permission = ""
+		}
+		c.Set("permission", permission)
+
 		c.Next()
 	}
 }
 
+func getTokenFromRequest(c *gin.Context) string {
+	token, err := c.Cookie("access_token")
+	if err == nil && token != "" {
+		return token
+	}
+
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		return ""
+	}
+	parts := strings.Fields(authHeader)
+	if len(parts) == 2 && strings.ToLower(parts[0]) == "bearer" {
+		return parts[1]
+	}
+
+	return ""
+}
+
 func validateToken(tokenString string, config *config.EnvConfig) (*jwt.Token, error) {
 	jwtSecret := []byte(config.JWT.SecretKey)
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
 		return jwtSecret, nil
 	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return token, nil
 }

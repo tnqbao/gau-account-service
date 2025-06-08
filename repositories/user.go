@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/tnqbao/gau-account-service/models"
+	"github.com/tnqbao/gau-account-service/schemas"
 	"gorm.io/gorm"
 	"strings"
 )
 
-func CreateUser(user *models.User, c *gin.Context) error {
+func CreateUser(user *schemas.User, c *gin.Context) error {
 	db := c.MustGet("db").(*gorm.DB)
 	if err := db.Create(user).Error; err != nil {
 		return fmt.Errorf("error creating user credential: %v", err)
@@ -17,7 +17,7 @@ func CreateUser(user *models.User, c *gin.Context) error {
 	return nil
 }
 
-func UpdateUser(user *models.User, c *gin.Context) (*models.User, error) {
+func UpdateUser(user *schemas.User, c *gin.Context) (*schemas.User, error) {
 	db := c.MustGet("db").(*gorm.DB)
 	if err := db.Save(&user).Error; err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func UpdateUser(user *models.User, c *gin.Context) (*models.User, error) {
 
 func DeleteUser(id uuid.UUID, c *gin.Context) error {
 	db := c.MustGet("db").(*gorm.DB)
-	var user models.User
+	var user schemas.User
 	if err := db.Where("user_id = ?", id).First(&user).Error; err != nil {
 		fmt.Errorf("error finding user with id %s: %v", id, err)
 	}
@@ -37,18 +37,30 @@ func DeleteUser(id uuid.UUID, c *gin.Context) error {
 	return nil
 }
 
-func GetUserById(id uuid.UUID, c *gin.Context) (*models.User, error) {
+func GetUserById(id uuid.UUID, c *gin.Context) (*schemas.User, error) {
 	db := c.MustGet("db").(*gorm.DB)
-	var user models.User
+	var user schemas.User
 	if err := db.Where("user_id = ?", id).First(&user).Error; err != nil {
 		return nil, fmt.Errorf("error finding user with id %s: %v", id, err)
 	}
 	return &user, nil
 }
 
-func GetUserByIdentifierAndPassword(identifierType, identifier, hashedPassword string, c *gin.Context) (*models.User, error) {
+func GetUserByEmail(email string, c *gin.Context) (*schemas.User, error) {
 	db := c.MustGet("db").(*gorm.DB)
-	var userInfo models.User
+	var userInfo schemas.User
+	if err := db.Where("email = ?", email).First(&userInfo).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("user not found with email: %s", email)
+		}
+		return nil, fmt.Errorf("error finding user with email %s: %v", email, err)
+	}
+	return &userInfo, nil
+}
+
+func GetUserByIdentifierAndPassword(identifierType, identifier, hashedPassword string, c *gin.Context) (*schemas.User, error) {
+	db := c.MustGet("db").(*gorm.DB)
+	var userInfo schemas.User
 
 	var queryField string
 	switch strings.ToLower(identifierType) {
