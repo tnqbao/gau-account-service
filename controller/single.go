@@ -54,7 +54,7 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 		}
 	}
 
-	accessToken, err := ctrl.CreateAuthToken(ClaimsToken{
+	accessToken, err := ctrl.CreateAccessToken(ClaimsToken{
 		UserID:         user.UserID,
 		UserPermission: user.Permission,
 		FullName:       ctrl.CheckNullString(user.FullName),
