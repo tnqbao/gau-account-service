@@ -2,7 +2,6 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/tnqbao/gau-account-service/repositories"
 )
 
 func (ctrl *Controller) RenewAccessToken(c *gin.Context) {
@@ -28,7 +27,7 @@ func (ctrl *Controller) RenewAccessToken(c *gin.Context) {
 
 	hashedRefreshToken := ctrl.hashToken(refreshToken)
 
-	user, err := repositories.GetUserInfoFromRefreshToken(hashedRefreshToken, c)
+	user, err := ctrl.repository.GetUserInfoFromRefreshToken(hashedRefreshToken)
 	if err != nil {
 		if err.Error() == "record not found" {
 			c.JSON(404, gin.H{

@@ -2,7 +2,6 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/tnqbao/gau-account-service/repositories"
 	"log"
 	"net/http"
 )
@@ -18,7 +17,7 @@ func (ctrl *Controller) Logout(c *gin.Context) {
 		deviceID := c.GetHeader("X-Device-ID")
 
 		// Gọi hàm Delete, giờ trả về cả RowsAffected
-		rowsAffected, err := repositories.DeleteRefreshTokenByTokenAndDevice(hashedToken, deviceID, c)
+		rowsAffected, err := ctrl.repository.DeleteRefreshTokenByTokenAndDevice(hashedToken, deviceID)
 		if err != nil {
 			log.Println("Error deleting refresh token:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})

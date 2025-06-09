@@ -5,22 +5,18 @@ import (
 	"github.com/tnqbao/gau-account-service/config"
 	"github.com/tnqbao/gau-account-service/controller"
 	"github.com/tnqbao/gau-account-service/middlewares"
-	"gorm.io/gorm"
 )
 
-func SetupRouter(db *gorm.DB, config *config.EnvConfig) *gin.Engine {
+func SetupRouter(config *config.Config) *gin.Engine {
 	ctrl := controller.NewController(config)
 	r := gin.Default()
-	useMiddlewares, err := middlewares.NewMiddlewares(config)
+
+	useMiddlewares, err := middlewares.NewMiddlewares(config.EnvConfig)
 	if err != nil {
 		panic(err)
 	}
 
 	r.Use(useMiddlewares.CORSMiddleware)
-	r.Use(func(c *gin.Context) {
-		c.Set("db", db)
-		c.Next()
-	})
 	apiRoutes := r.Group("/api/account/v2")
 	{
 		identifierRoutes := apiRoutes.Group("/basic")

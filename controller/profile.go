@@ -3,7 +3,6 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/tnqbao/gau-account-service/repositories"
 	"github.com/tnqbao/gau-account-service/schemas"
 	"net/http"
 )
@@ -31,7 +30,7 @@ func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
 		return
 	}
 
-	userInfo, err := repositories.GetUserById(uuidUserId, c)
+	userInfo, err := ctrl.repository.GetUserById(uuidUserId)
 	if err != nil {
 		if err.Error() == "record not found" {
 			c.JSON(404, gin.H{"error": "User not found"})
@@ -76,7 +75,7 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 		return
 	}
 
-	user, err := repositories.GetUserById(userID, c)
+	user, err := ctrl.repository.GetUserById(userID)
 	if err != nil {
 		status := http.StatusInternalServerError
 		errMsg := "Internal server error: " + err.Error()
@@ -100,7 +99,7 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 		GithubURL:   req.GitHubURL,
 	}
 
-	updatedUser, err := repositories.UpdateUser(updateData, c)
+	updatedUser, err := ctrl.repository.UpdateUser(updateData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return

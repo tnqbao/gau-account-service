@@ -36,7 +36,7 @@ func LoadEnvConfig() *EnvConfig {
 	// Postgres
 	config.Postgres.HOST = os.Getenv("PGPOOL_HOST")
 	config.Postgres.Database = os.Getenv("PGPOOL_DB")
-	config.Postgres.Username = os.Getenv("PGPOOL_USERNAME")
+	config.Postgres.Username = os.Getenv("PGPOOL_USER")
 	config.Postgres.Password = os.Getenv("PGPOOL_PASSWORD")
 	config.Postgres.Port = os.Getenv("PGPOOL_PORT")
 
@@ -55,7 +55,7 @@ func LoadEnvConfig() *EnvConfig {
 	config.CORS.GlobalDomain = os.Getenv("GLOBAL_DOMAIN")
 
 	// Redis
-	config.Redis.Address = os.Getenv("REDIS_ADDR")
+	config.Redis.Address = os.Getenv("REDIS_ADDRESS")
 	config.Redis.Password = os.Getenv("REDIS_PASSWORD")
 	config.Redis.Database, _ = strconv.Atoi(os.Getenv("REDIS_DB"))
 	if config.Redis.Database == 0 {

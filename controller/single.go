@@ -5,7 +5,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/providers/helper"
-	"github.com/tnqbao/gau-account-service/repositories"
 	"github.com/tnqbao/gau-account-service/schemas"
 	"gorm.io/gorm"
 	"net/http"
@@ -31,7 +30,7 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 		return
 	}
 
-	user, err := repositories.GetUserByEmail(email, c)
+	user, err := ctrl.repository.GetUserByEmail(email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			user = &schemas.User{
@@ -43,7 +42,7 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 				IsEmailVerified: googleUser.IsEmailVerified,
 				Permission:      "member",
 			}
-			if err := repositories.CreateUser(user, c); err != nil {
+			if err := ctrl.repository.CreateUser(user); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot create user"})
 				return
 			}
@@ -67,10 +66,10 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 		return
 	}
 
-	refreshToken := ctrl.GenerateRefreshToken()
-	hashedRefresh := ctrl.hashToken(refreshToken)
+	token := ctrl.GenerateToken()
+	hashedRefresh := ctrl.hashToken(token)
 
-	rt := &schemas.RefreshToken{
+	refreshToken := &schemas.RefreshToken{
 		ID:        uuid.NewString(),
 		UserID:    user.UserID,
 		Token:     hashedRefresh,
@@ -79,13 +78,13 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 		ExpiresAt: time.Now().Add(24 * time.Hour),
 	}
 
-	if err := repositories.CreateRefreshToken(rt, c); err != nil {
+	if err := ctrl.repository.CreateRefreshToken(refreshToken); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save refresh token"})
 		return
 	}
 
 	ctrl.SetAccessCookie(c, accessToken, 15)
-	ctrl.SetRefreshCookie(c, refreshToken, ctrl.config.JWT.Expire)
+	ctrl.SetRefreshCookie(c, token, ctrl.config.EnvConfig.JWT.Expire)
 
 	c.JSON(http.StatusOK, gin.H{
 		"access_token":  accessToken,

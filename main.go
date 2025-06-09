@@ -15,9 +15,8 @@ func main() {
 		log.Println("No .env file found, continuing with environment variables")
 	}
 
-	cf := config.LoadEnvConfig()
-	db := config.InitDB()
+	cfg := config.NewConfig()
 
-	router := routes.SetupRouter(db, cf)
+	router := routes.SetupRouter(cfg)
 	router.Run(":8080")
 }

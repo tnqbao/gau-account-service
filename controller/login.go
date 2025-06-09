@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/tnqbao/gau-account-service/repositories"
 	"github.com/tnqbao/gau-account-service/schemas"
 	"log"
 	"net/http"
@@ -55,7 +54,7 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 	}
 
 	// === Refresh Token ===
-	refreshTokenPlain := ctrl.GenerateRefreshToken()
+	refreshTokenPlain := ctrl.GenerateToken()
 	refreshTokenHashed := ctrl.hashToken(refreshTokenPlain)
 	refreshTokenExpiry := time.Now().Add(30 * 24 * time.Hour)
 
@@ -67,7 +66,7 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 		ExpiresAt: refreshTokenExpiry,
 	}
 
-	if err := repositories.CreateRefreshToken(refreshTokenModel, c); err != nil {
+	if err := ctrl.repository.CreateRefreshToken(refreshTokenModel); err != nil {
 		log.Println("Failed to save refresh token:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not store refresh token"})
 		return
