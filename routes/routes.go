@@ -39,6 +39,10 @@ func SetupRouter(db *gorm.DB, config *config.EnvConfig) *gin.Engine {
 		apiRoutes.GET("/token", ctrl.RenewAccessToken, useMiddlewares.AuthMiddleware)
 		apiRoutes.POST("/logout", ctrl.Logout, useMiddlewares.AuthMiddleware)
 
+		ssoRoutes := apiRoutes.Group("/sso")
+		{
+			ssoRoutes.POST("/google", ctrl.LoginWithGoogle)
+		}
 		//	authedRoutes := userRoutes.Group("/")
 		//	{
 		//		authedRoutes.Use(useMiddlewares.AuthMiddleware)

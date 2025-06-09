@@ -33,7 +33,7 @@ func (ctrl *Controller) Logout(c *gin.Context) {
 		log.Println("No refresh token provided in header or cookie")
 	}
 
-	c.SetCookie("auth_token", "", -1, "/", "", false, true)
+	c.SetCookie("access_token", "", -1, "/", "", false, true)
 	c.SetCookie("refresh_token", "", -1, "/", "", false, true)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Logout successful"})

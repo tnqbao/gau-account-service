@@ -74,7 +74,7 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 	}
 
 	// === Set Cookies  ===
-	ctrl.SetAuthCookie(c, accessToken, int(accessTokenDuration.Seconds()))
+	ctrl.SetAccessCookie(c, accessToken, int(accessTokenDuration.Seconds()))
 	ctrl.SetRefreshCookie(c, refreshTokenPlain, int((30 * 24 * time.Hour).Seconds()))
 
 	// === Response ===

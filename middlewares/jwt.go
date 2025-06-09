@@ -69,7 +69,7 @@ func getTokenFromRequest(c *gin.Context) string {
 		return ""
 	}
 	parts := strings.Fields(authHeader)
-	if len(parts) == 2 && strings.ToLower(parts[0]) == "bearer" {
+	if len(parts) == 2 && strings.ToLower(parts[0]) == "Bearer" {
 		return parts[1]
 	}
 

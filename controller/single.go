@@ -2,6 +2,7 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/providers/helper"
 	"github.com/tnqbao/gau-account-service/repositories"
@@ -32,24 +33,22 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 
 	user, err := repositories.GetUserByEmail(email, c)
 	if err != nil {
-		if err != gorm.ErrRecordNotFound {
+		if err == gorm.ErrRecordNotFound {
+			user = &schemas.User{
+				UserID:          uuid.New(),
+				Email:           googleUser.Email,
+				FullName:        googleUser.FullName,
+				ImageURL:        googleUser.ImageURL,
+				Username:        googleUser.Username,
+				IsEmailVerified: googleUser.IsEmailVerified,
+				Permission:      "member",
+			}
+			if err := repositories.CreateUser(user, c); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot create user"})
+				return
+			}
+		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
-			return
-		}
-	}
-
-	if user == nil {
-		user = &schemas.User{
-			UserID:          uuid.New(),
-			Email:           googleUser.Email,
-			FullName:        googleUser.FullName,
-			ImageURL:        googleUser.ImageURL,
-			Username:        googleUser.Username,
-			IsEmailVerified: googleUser.IsEmailVerified,
-			Permission:      "member",
-		}
-		if err := repositories.CreateUser(user, c); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot create user"})
 			return
 		}
 	}
@@ -58,6 +57,10 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 		UserID:         user.UserID,
 		UserPermission: user.Permission,
 		FullName:       ctrl.CheckNullString(user.FullName),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create access token"})
@@ -81,11 +84,12 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 		return
 	}
 
-	ctrl.SetAuthCookie(c, accessToken, 15)
+	ctrl.SetAccessCookie(c, accessToken, 15)
 	ctrl.SetRefreshCookie(c, refreshToken, ctrl.config.JWT.Expire)
 
 	c.JSON(http.StatusOK, gin.H{
-		"token": accessToken,
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
 	})
 }
 

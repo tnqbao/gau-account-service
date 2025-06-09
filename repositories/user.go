@@ -11,7 +11,7 @@ import (
 
 func CreateUser(user *schemas.User, c *gin.Context) error {
 	db := c.MustGet("db").(*gorm.DB)
-	if err := db.Create(user).Error; err != nil {
+	if err := db.Omit("image_url").Create(user).Error; err != nil {
 		return fmt.Errorf("error creating user credential: %v", err)
 	}
 	return nil
@@ -50,10 +50,7 @@ func GetUserByEmail(email string, c *gin.Context) (*schemas.User, error) {
 	db := c.MustGet("db").(*gorm.DB)
 	var userInfo schemas.User
 	if err := db.Where("email = ?", email).First(&userInfo).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("user not found with email: %s", email)
-		}
-		return nil, fmt.Errorf("error finding user with email %s: %v", email, err)
+		return nil, err
 	}
 	return &userInfo, nil
 }

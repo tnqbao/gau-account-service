@@ -24,9 +24,9 @@ func (ctrl *Controller) CreateAccessToken(claims ClaimsToken) (string, error) {
 	return token.SignedString([]byte(ctrl.config.JWT.SecretKey))
 }
 
-func (ctrl *Controller) SetAuthCookie(c *gin.Context, token string, timeExpired int) {
+func (ctrl *Controller) SetAccessCookie(c *gin.Context, token string, timeExpired int) {
 	globalDomain := ctrl.config.CORS.GlobalDomain
-	c.SetCookie("auth_token", token, timeExpired, "/", globalDomain, false, true)
+	c.SetCookie("access_token", token, timeExpired, "/", globalDomain, false, true)
 }
 
 func (ctrl *Controller) SetRefreshCookie(c *gin.Context, token string, timeExpired int) {
