@@ -5,13 +5,15 @@ import (
 	"github.com/tnqbao/gau-account-service/config"
 	"github.com/tnqbao/gau-account-service/controller"
 	"github.com/tnqbao/gau-account-service/middlewares"
+	"github.com/tnqbao/gau-account-service/service"
 )
 
 func SetupRouter(config *config.Config) *gin.Engine {
-	ctrl := controller.NewController(config)
+	svc := service.InitServices(config)
+	ctrl := controller.NewController(config, svc)
 	r := gin.Default()
 
-	useMiddlewares, err := middlewares.NewMiddlewares(config.EnvConfig)
+	useMiddlewares, err := middlewares.NewMiddlewares(config.EnvConfig, svc)
 	if err != nil {
 		panic(err)
 	}
@@ -39,32 +41,6 @@ func SetupRouter(config *config.Config) *gin.Engine {
 		{
 			ssoRoutes.POST("/google", ctrl.LoginWithGoogle)
 		}
-		//	authedRoutes := userRoutes.Group("/")
-		//	{
-		//		authedRoutes.Use(useMiddlewares.AuthMiddleware)
-		//
-		//		authedRoutes.GET("/:id", controller.GetUserById)
-		//		authedRoutes.GET("/me", controller.GetMe)
-		//
-		//		authedRoutes.DELETE("/delete", controller.DeleteUserById)
-		//		authedRoutes.PUT("/update", controller.UpdateUserInformation)
-		//	}
-		//
-		//	authRotues := userRoutes.Group("/auth")
-		//	{
-		//		authRotues.POST("/login", controller.Authentication)
-		//		authRotues.PUT("/register", controller.Register)
-		//		authRotues.POST("/logout", controller.Logout, useMiddlewares.AuthMiddleware)
-		//	}
-		//
-		//	publicRoutes := userRoutes.Group("/public")
-		//	{
-		//		publicRoutes.GET("/check", public.HealthCheck)
-		//		publicRoutes.GET("/:id", public.GetPublicUserByID)
-		//		publicRoutes.POST("/list", public.GetListUserPublicByIDs)
-		//	}
-		//
-		//	userRoutes.GET("/check-deploy", controller.TestDeployment)
 	}
 	return r
 }

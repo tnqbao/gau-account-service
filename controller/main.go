@@ -12,18 +12,15 @@ type Controller struct {
 	repository *repository.Repository
 }
 
-func NewController(config *config.Config) *Controller {
-	svc := service.InitServices(config)
-	if svc == nil {
-		panic("Failed to initialize service")
-	}
-	repo := repository.InitRepository(svc.Postgres.DB)
+func NewController(config *config.Config, service *service.Service) *Controller {
+
+	repo := repository.InitRepository(service.Postgres.DB)
 	if repo == nil {
 		panic("Failed to initialize repository")
 	}
 	return &Controller{
 		config:     config,
-		service:    svc,
+		service:    service,
 		repository: repo,
 	}
 }

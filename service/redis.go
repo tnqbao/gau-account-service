@@ -2,10 +2,9 @@ package service
 
 import (
 	"context"
-	"log"
-
 	"github.com/redis/go-redis/v9"
 	"github.com/tnqbao/gau-account-service/config"
+	"log"
 )
 
 type RedisService struct {
@@ -34,4 +33,8 @@ func (r *RedisService) Set(key string, value string) error {
 
 func (r *RedisService) Get(key string) (string, error) {
 	return r.client.Get(context.Background(), key).Result()
+}
+
+func (r *RedisService) Delete(key string) error {
+	return r.client.Del(context.Background(), key).Err()
 }

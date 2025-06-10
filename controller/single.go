@@ -7,6 +7,7 @@ import (
 	"github.com/tnqbao/gau-account-service/providers/helper"
 	"github.com/tnqbao/gau-account-service/schemas"
 	"gorm.io/gorm"
+	"log"
 	"net/http"
 	"time"
 )
@@ -52,12 +53,16 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 		}
 	}
 
+	// === Access Token ===
+	accessTokenDuration := 15 * time.Minute
+	accessTokenExpiry := time.Now().Add(accessTokenDuration)
+
 	accessToken, err := ctrl.CreateAccessToken(ClaimsToken{
 		UserID:         user.UserID,
 		UserPermission: user.Permission,
 		FullName:       ctrl.CheckNullString(user.FullName),
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(accessTokenExpiry),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	})
@@ -66,29 +71,42 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 		return
 	}
 
+	// === Refresh Token ===
+
+	// Get a free ID from Redis bitmap
+	refreshTokenID, err := ctrl.service.Redis.AllocateRefreshTokenID(c.Request.Context())
+	if err != nil {
+		log.Println("Failed to allocate refresh token ID:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not allocate refresh token ID"})
+		return
+	}
+
 	token := ctrl.GenerateToken()
 	hashedRefresh := ctrl.hashToken(token)
+	refreshTokenExpiry := time.Now().Add(30 * 24 * time.Hour)
 
 	refreshToken := &schemas.RefreshToken{
-		ID:        uuid.NewString(),
+		ID:        refreshTokenID,
 		UserID:    user.UserID,
 		Token:     hashedRefresh,
 		DeviceID:  c.GetHeader("X-Device-ID"),
 		CreatedAt: time.Now(),
-		ExpiresAt: time.Now().Add(24 * time.Hour),
+		ExpiresAt: refreshTokenExpiry,
 	}
 
 	if err := ctrl.repository.CreateRefreshToken(refreshToken); err != nil {
+		// If saving the refresh token fails, release the ID back to Redis
+		_ = ctrl.service.Redis.ReleaseID(c.Request.Context(), refreshTokenID)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save refresh token"})
 		return
 	}
 
-	ctrl.SetAccessCookie(c, accessToken, 15)
-	ctrl.SetRefreshCookie(c, token, ctrl.config.EnvConfig.JWT.Expire)
+	ctrl.SetAccessCookie(c, accessToken, int(accessTokenDuration.Seconds()))
+	ctrl.SetRefreshCookie(c, token, int((30 * 24 * time.Hour).Seconds()))
 
 	c.JSON(http.StatusOK, gin.H{
 		"access_token":  accessToken,
-		"refresh_token": refreshToken,
+		"refresh_token": token,
 	})
 }
 

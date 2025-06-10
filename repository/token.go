@@ -37,3 +37,19 @@ func (r *Repository) GetUserInfoFromRefreshToken(token string) (*schemas.User, e
 
 	return &user, nil
 }
+
+func (r *Repository) GetRefreshTokenByTokenAndDevice(token string, deviceID string) (*schemas.RefreshToken, error) {
+	var refreshToken schemas.RefreshToken
+	if err := r.db.Where("token = ? AND device_id = ?", token, deviceID).First(&refreshToken).Error; err != nil {
+		return nil, err
+	}
+
+	if refreshToken.ExpiresAt.Before(time.Now()) {
+		if err := r.db.Delete(&refreshToken).Error; err != nil {
+			return nil, fmt.Errorf("failed to delete expired refresh token: %w", err)
+		}
+		return nil, fmt.Errorf("refresh token expired")
+	}
+
+	return &refreshToken, nil
+}

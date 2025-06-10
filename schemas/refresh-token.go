@@ -1,12 +1,13 @@
 package schemas
 
 import (
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type RefreshToken struct {
-	ID        string    `gorm:"primaryKey"`
+	ID        int64     `gorm:"primaryKey;autoIncrement:false"`
 	Token     string    `gorm:"uniqueIndex"`
 	DeviceID  string    `gorm:"uniqueIndex"`
 	ExpiresAt time.Time `gorm:"index"`
