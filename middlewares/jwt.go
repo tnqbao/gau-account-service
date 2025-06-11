@@ -32,25 +32,15 @@ func AuthMiddleware(cfg *config.EnvConfig, svc *service.Service) gin.HandlerFunc
 			return
 		}
 
-		ctx := c.Request.Context()
-
-		// Check JID (JWT ID)
-		jidStr, _ := claims["jti"].(string)
-		if jidStr == "" {
-			jidStr, _ = claims["jid"].(string)
-		}
-		if jidStr == "" {
-			abortUnauthorized(c, "Token is missing jti/jid")
-			return
-		}
-
-		jid, err := strconv.ParseInt(jidStr, 10, 64)
+		// Extract JID (JWT ID)
+		jid, err := extractJID(claims)
 		if err != nil {
-			abortUnauthorized(c, "Invalid jid format")
+			abortUnauthorized(c, err.Error())
 			return
 		}
 
-		// ✅ GetBit result
+		// Check Redis blacklist
+		ctx := c.Request.Context()
 		revoked, err := svc.Redis.GetBit(ctx, "blacklist_bitmap", jid)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Redis error"})
@@ -62,7 +52,7 @@ func AuthMiddleware(cfg *config.EnvConfig, svc *service.Service) gin.HandlerFunc
 			return
 		}
 
-		// Set context values
+		// inject claims into context
 		if err := injectClaimsToContext(c, claims); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			c.Abort()
@@ -93,6 +83,29 @@ func parseToken(tokenString string, cfg *config.EnvConfig) (*jwt.Token, error) {
 		}
 		return secret, nil
 	})
+}
+
+func extractJID(claims jwt.MapClaims) (int64, error) {
+	if val, ok := claims["jti"]; ok {
+		return parseJIDValue(val)
+	}
+	if val, ok := claims["jid"]; ok {
+		return parseJIDValue(val)
+	}
+	return 0, errors.New("Token is missing jti/jid")
+}
+
+func parseJIDValue(val interface{}) (int64, error) {
+	switch v := val.(type) {
+	case float64:
+		return int64(v), nil
+	case int64:
+		return v, nil
+	case string:
+		return strconv.ParseInt(v, 10, 64)
+	default:
+		return 0, errors.New("Invalid jid format")
+	}
 }
 
 func injectClaimsToContext(c *gin.Context, claims jwt.MapClaims) error {

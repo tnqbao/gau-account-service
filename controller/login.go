@@ -28,30 +28,6 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 		return
 	}
 
-	// === Access Token ===
-	accessTokenDuration := 15 * time.Minute
-	if req.KeepLogin != nil && *req.KeepLogin == "true" {
-		accessTokenDuration = 7 * 24 * time.Hour
-	}
-	accessTokenExpiry := time.Now().Add(accessTokenDuration)
-
-	claims := &ClaimsToken{
-		UserID:         user.UserID,
-		FullName:       *user.FullName,
-		UserPermission: user.Permission,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(accessTokenExpiry),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
-	}
-
-	accessToken, err := ctrl.CreateAccessToken(*claims)
-	if err != nil {
-		log.Println("Failed to create access token:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create access token"})
-		return
-	}
-
 	// === Refresh Token ===
 
 	// Lấy ID rảnh từ Redis bitmap
@@ -79,6 +55,31 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 		// Nếu lỗi xảy ra, nên trả ID lại
 		_ = ctrl.service.Redis.ReleaseID(c.Request.Context(), refreshTokenID)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not store refresh token"})
+		return
+	}
+
+	// === Access Token ===
+	accessTokenDuration := 15 * time.Minute
+	if req.KeepLogin != nil && *req.KeepLogin == "true" {
+		accessTokenDuration = 7 * 24 * time.Hour
+	}
+	accessTokenExpiry := time.Now().Add(accessTokenDuration)
+
+	claims := &ClaimsToken{
+		JID:            refreshTokenModel.ID,
+		UserID:         user.UserID,
+		FullName:       *user.FullName,
+		UserPermission: user.Permission,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(accessTokenExpiry),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	accessToken, err := ctrl.CreateAccessToken(*claims)
+	if err != nil {
+		log.Println("Failed to create access token:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create access token"})
 		return
 	}
 

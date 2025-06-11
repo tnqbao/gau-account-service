@@ -53,24 +53,6 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 		}
 	}
 
-	// === Access Token ===
-	accessTokenDuration := 15 * time.Minute
-	accessTokenExpiry := time.Now().Add(accessTokenDuration)
-
-	accessToken, err := ctrl.CreateAccessToken(ClaimsToken{
-		UserID:         user.UserID,
-		UserPermission: user.Permission,
-		FullName:       ctrl.CheckNullString(user.FullName),
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(accessTokenExpiry),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create access token"})
-		return
-	}
-
 	// === Refresh Token ===
 
 	// Get a free ID from Redis bitmap
@@ -98,6 +80,25 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 		// If saving the refresh token fails, release the ID back to Redis
 		_ = ctrl.service.Redis.ReleaseID(c.Request.Context(), refreshTokenID)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save refresh token"})
+		return
+	}
+
+	// === Access Token ===
+	accessTokenDuration := 15 * time.Minute
+	accessTokenExpiry := time.Now().Add(accessTokenDuration)
+
+	accessToken, err := ctrl.CreateAccessToken(ClaimsToken{
+		JID:            refreshToken.ID,
+		UserID:         user.UserID,
+		UserPermission: user.Permission,
+		FullName:       ctrl.CheckNullString(user.FullName),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(accessTokenExpiry),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create access token"})
 		return
 	}
 

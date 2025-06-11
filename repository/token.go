@@ -29,7 +29,7 @@ func (r *Repository) GetUserInfoFromRefreshToken(token string) (*schemas.User, e
 	}
 
 	var user schemas.User
-	if err := r.db.Select("user_id, permission, fullname").
+	if err := r.db.Select("user_id, permission, full_name").
 		Where("user_id = ?", refreshToken.UserID).
 		First(&user).Error; err != nil {
 		return nil, err

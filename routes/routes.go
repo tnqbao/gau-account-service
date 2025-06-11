@@ -34,7 +34,7 @@ func SetupRouter(config *config.Config) *gin.Engine {
 			profileRoutes.PUT("/", ctrl.UpdateAccountInfo)
 		}
 
-		apiRoutes.GET("/token", ctrl.RenewAccessToken, useMiddlewares.AuthMiddleware)
+		apiRoutes.GET("/token", ctrl.RenewAccessToken)
 		apiRoutes.POST("/logout", ctrl.Logout, useMiddlewares.AuthMiddleware)
 
 		ssoRoutes := apiRoutes.Group("/sso")

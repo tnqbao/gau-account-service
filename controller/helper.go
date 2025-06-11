@@ -8,11 +8,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/schemas"
+	"net/http"
 	"time"
 )
 
 func (ctrl *Controller) CreateAccessToken(claims ClaimsToken) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"jid":        claims.JID,
 		"user_id":    claims.UserID,
 		"permission": claims.UserPermission,
 		"fullname":   claims.FullName,
@@ -102,4 +104,20 @@ func (ctrl *Controller) IsValidPhone(phone string) bool {
 		}
 	}
 	return true
+}
+
+func handleTokenError(c *gin.Context, err error) {
+	if err == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Refresh token not found"})
+		return
+	}
+
+	switch err.Error() {
+	case "record not found":
+		c.JSON(http.StatusNotFound, gin.H{"error": "Refresh token not found or revoked"})
+	case "refresh token expired":
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token expired"})
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+	}
 }
