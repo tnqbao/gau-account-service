@@ -2,67 +2,67 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/tnqbao/gau-account-service/repositories"
+	"github.com/golang-jwt/jwt/v5"
+	"net/http"
+	"time"
 )
 
 func (ctrl *Controller) RenewAccessToken(c *gin.Context) {
-	refreshToken, err := c.Cookie("refresh_token")
-	if err != nil {
-		c.JSON(400, gin.H{
-			"error": "Refresh token not found in cookie",
-		})
+	refreshToken := c.GetHeader("X-Refresh-Token")
+	if refreshToken == "" {
+		refreshToken, _ = c.Cookie("refresh_token")
+	}
+
+	deviceID := c.GetHeader("X-Device-ID")
+
+	if refreshToken == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Refresh token is required"})
 		return
 	}
 
-	refreshTokenHeader := c.GetHeader("X-Refresh-Token")
-	if refreshTokenHeader != "" {
-		refreshToken = refreshTokenHeader
-	}
-
-	if refreshToken == "" {
-		c.JSON(400, gin.H{
-			"error": "Refresh token is required",
-		})
+	if deviceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Device ID is required"})
 		return
 	}
 
 	hashedRefreshToken := ctrl.hashToken(refreshToken)
 
-	user, err := repositories.GetUserInfoFromRefreshToken(hashedRefreshToken, c)
-	if err != nil {
-		if err.Error() == "record not found" {
-			c.JSON(404, gin.H{
-				"error": "Refresh token not found",
-			})
-			return
-		} else if err.Error() == "refresh token expired" {
-			c.JSON(401, gin.H{
-				"error": "Refresh token expired",
-			})
-			return
-		}
-		c.JSON(500, gin.H{
-			"error": "Internal server error",
-		})
+	refreshTokenModel, err := ctrl.repository.GetRefreshTokenByTokenAndDevice(hashedRefreshToken, deviceID)
+	if err != nil || refreshTokenModel == nil {
+		handleTokenError(c, err)
 		return
 	}
+
+	user, err := ctrl.repository.GetUserInfoFromRefreshToken(hashedRefreshToken)
+	if err != nil {
+		handleTokenError(c, err)
+		return
+	}
+
+	// === Access Token ===
+	accessTokenDuration := 15 * time.Minute
+	accessTokenExpiry := time.Now().Add(accessTokenDuration)
+
 	claims := ClaimsToken{
+		JID:            refreshTokenModel.ID,
 		UserID:         user.UserID,
 		UserPermission: user.Permission,
-		FullName:       *user.FullName,
+		FullName:       ctrl.CheckNullString(user.FullName),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(accessTokenExpiry),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
 	}
 
 	accessToken, err := ctrl.CreateAccessToken(claims)
 	if err != nil {
-		c.JSON(500, gin.H{
-			"error": "Could not create access token",
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create access token"})
 		return
 	}
 
-	c.SetCookie("auth_token", accessToken, 3600, "/", "", false, true)
+	ctrl.SetAccessCookie(c, accessToken, int(accessTokenDuration.Seconds()))
 
-	c.JSON(200, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"access_token": accessToken,
 	})
 }

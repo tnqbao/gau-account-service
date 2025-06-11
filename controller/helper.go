@@ -7,13 +7,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/tnqbao/gau-account-service/repositories"
 	"github.com/tnqbao/gau-account-service/schemas"
+	"net/http"
 	"time"
 )
 
 func (ctrl *Controller) CreateAccessToken(claims ClaimsToken) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"jid":        claims.JID,
 		"user_id":    claims.UserID,
 		"permission": claims.UserPermission,
 		"fullname":   claims.FullName,
@@ -21,16 +22,16 @@ func (ctrl *Controller) CreateAccessToken(claims ClaimsToken) (string, error) {
 		"iat":        time.Now().Unix(),
 	})
 
-	return token.SignedString([]byte(ctrl.config.JWT.SecretKey))
+	return token.SignedString([]byte(ctrl.config.EnvConfig.JWT.SecretKey))
 }
 
-func (ctrl *Controller) SetAuthCookie(c *gin.Context, token string, timeExpired int) {
-	globalDomain := ctrl.config.CORS.GlobalDomain
-	c.SetCookie("auth_token", token, timeExpired, "/", globalDomain, false, true)
+func (ctrl *Controller) SetAccessCookie(c *gin.Context, token string, timeExpired int) {
+	globalDomain := ctrl.config.EnvConfig.CORS.GlobalDomain
+	c.SetCookie("access_token", token, timeExpired, "/", globalDomain, false, true)
 }
 
 func (ctrl *Controller) SetRefreshCookie(c *gin.Context, token string, timeExpired int) {
-	globalDomain := ctrl.config.CORS.GlobalDomain
+	globalDomain := ctrl.config.EnvConfig.CORS.GlobalDomain
 	c.SetCookie("refresh_token", token, timeExpired, "/", globalDomain, false, true)
 }
 
@@ -48,16 +49,16 @@ func (ctrl *Controller) AuthenticateUser(req *ClientRequestBasicLogin, c *gin.Co
 	hashedPassword := ctrl.HashPassword(*req.Password)
 
 	if req.Username != nil {
-		return repositories.GetUserByIdentifierAndPassword("username", *req.Username, hashedPassword, c)
+		return ctrl.repository.GetUserByIdentifierAndPassword("username", *req.Username, hashedPassword)
 	} else if req.Email != nil {
-		return repositories.GetUserByIdentifierAndPassword("email", *req.Email, hashedPassword, c)
+		return ctrl.repository.GetUserByIdentifierAndPassword("email", *req.Email, hashedPassword)
 	} else if req.Phone != nil {
-		return repositories.GetUserByIdentifierAndPassword("phone", *req.Phone, hashedPassword, c)
+		return ctrl.repository.GetUserByIdentifierAndPassword("phone", *req.Phone, hashedPassword)
 	}
 	return nil, fmt.Errorf("missing login identifier")
 }
 
-func (ctrl *Controller) GenerateRefreshToken() string {
+func (ctrl *Controller) GenerateToken() string {
 	return uuid.NewString() + uuid.NewString()
 }
 
@@ -103,4 +104,20 @@ func (ctrl *Controller) IsValidPhone(phone string) bool {
 		}
 	}
 	return true
+}
+
+func handleTokenError(c *gin.Context, err error) {
+	if err == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Refresh token not found"})
+		return
+	}
+
+	switch err.Error() {
+	case "record not found":
+		c.JSON(http.StatusNotFound, gin.H{"error": "Refresh token not found or revoked"})
+	case "refresh token expired":
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token expired"})
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+	}
 }

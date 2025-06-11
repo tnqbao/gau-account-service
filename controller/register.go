@@ -2,7 +2,6 @@ package controller
 
 import (
 	"github.com/google/uuid"
-	"github.com/tnqbao/gau-account-service/repositories"
 	"github.com/tnqbao/gau-account-service/schemas"
 	"log"
 	"net/http"
@@ -46,7 +45,7 @@ func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 		Gender:      &req.Gender,
 	}
 
-	if err := repositories.CreateUser(&user, c); err != nil {
+	if err := ctrl.repository.CreateUser(&user); err != nil {
 		log.Println("Error creating user :", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return

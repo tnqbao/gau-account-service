@@ -60,6 +60,7 @@ type ClientRequestGoogleAuthentication struct {
 
 // Client access token response structure
 type ClaimsToken struct {
+	JID            int64     `json:"jid"`
 	UserID         uuid.UUID `json:"user_id"`
 	UserPermission string    `json:"permission"`
 	FullName       string    `json:"fullname"`

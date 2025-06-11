@@ -5,22 +5,20 @@ import (
 	"github.com/tnqbao/gau-account-service/config"
 	"github.com/tnqbao/gau-account-service/controller"
 	"github.com/tnqbao/gau-account-service/middlewares"
-	"gorm.io/gorm"
+	"github.com/tnqbao/gau-account-service/service"
 )
 
-func SetupRouter(db *gorm.DB, config *config.EnvConfig) *gin.Engine {
-	ctrl := controller.NewController(config)
+func SetupRouter(config *config.Config) *gin.Engine {
+	svc := service.InitServices(config)
+	ctrl := controller.NewController(config, svc)
 	r := gin.Default()
-	useMiddlewares, err := middlewares.NewMiddlewares(config)
+
+	useMiddlewares, err := middlewares.NewMiddlewares(config.EnvConfig, svc)
 	if err != nil {
 		panic(err)
 	}
 
 	r.Use(useMiddlewares.CORSMiddleware)
-	r.Use(func(c *gin.Context) {
-		c.Set("db", db)
-		c.Next()
-	})
 	apiRoutes := r.Group("/api/account/v2")
 	{
 		identifierRoutes := apiRoutes.Group("/basic")
@@ -36,35 +34,13 @@ func SetupRouter(db *gorm.DB, config *config.EnvConfig) *gin.Engine {
 			profileRoutes.PUT("/", ctrl.UpdateAccountInfo)
 		}
 
-		apiRoutes.GET("/token", ctrl.RenewAccessToken, useMiddlewares.AuthMiddleware)
+		apiRoutes.GET("/token", ctrl.RenewAccessToken)
 		apiRoutes.POST("/logout", ctrl.Logout, useMiddlewares.AuthMiddleware)
 
-		//	authedRoutes := userRoutes.Group("/")
-		//	{
-		//		authedRoutes.Use(useMiddlewares.AuthMiddleware)
-		//
-		//		authedRoutes.GET("/:id", controller.GetUserById)
-		//		authedRoutes.GET("/me", controller.GetMe)
-		//
-		//		authedRoutes.DELETE("/delete", controller.DeleteUserById)
-		//		authedRoutes.PUT("/update", controller.UpdateUserInformation)
-		//	}
-		//
-		//	authRotues := userRoutes.Group("/auth")
-		//	{
-		//		authRotues.POST("/login", controller.Authentication)
-		//		authRotues.PUT("/register", controller.Register)
-		//		authRotues.POST("/logout", controller.Logout, useMiddlewares.AuthMiddleware)
-		//	}
-		//
-		//	publicRoutes := userRoutes.Group("/public")
-		//	{
-		//		publicRoutes.GET("/check", public.HealthCheck)
-		//		publicRoutes.GET("/:id", public.GetPublicUserByID)
-		//		publicRoutes.POST("/list", public.GetListUserPublicByIDs)
-		//	}
-		//
-		//	userRoutes.GET("/check-deploy", controller.TestDeployment)
+		ssoRoutes := apiRoutes.Group("/sso")
+		{
+			ssoRoutes.POST("/google", ctrl.LoginWithGoogle)
+		}
 	}
 	return r
 }
