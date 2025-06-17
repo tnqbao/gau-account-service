@@ -41,6 +41,11 @@ func SetupRouter(config *config.Config) *gin.Engine {
 		{
 			ssoRoutes.POST("/google", ctrl.LoginWithGoogle)
 		}
+		checkRoutes := apiRoutes.Group("/check")
+		{
+			//checkRoutes.GET("/deployment", ctrl.TestDeployment)
+			checkRoutes.GET("/", ctrl.CheckHealth)
+		}
 	}
 	return r
 }
