@@ -12,7 +12,7 @@ type Middlewares struct {
 
 func NewMiddlewares(ctrl *controller.Controller) (*Middlewares, error) {
 	cors := CORSMiddleware(ctrl.Config.EnvConfig)
-	auth := AuthMiddleware(ctrl.Config.EnvConfig, ctrl.Infra)
+	auth := AuthMiddleware(ctrl.Config.EnvConfig, ctrl.Repository)
 
 	return &Middlewares{
 		CORSMiddleware: cors,

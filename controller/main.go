@@ -14,7 +14,7 @@ type Controller struct {
 
 func NewController(config *config.Config, infra *infra.Infra) *Controller {
 
-	repo := repository.InitRepository(infra.Postgres.DB)
+	repo := repository.InitRepository(infra)
 	if repo == nil {
 		panic("Failed to initialize Repository")
 	}

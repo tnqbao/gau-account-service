@@ -56,7 +56,7 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 	// === Refresh Token ===
 
 	// Get a free ID from Redis bitmap
-	refreshTokenID, err := ctrl.Infra.Redis.AllocateRefreshTokenID(c.Request.Context())
+	refreshTokenID, err := ctrl.Repository.AllocateRefreshTokenID(c.Request.Context())
 	if err != nil {
 		log.Println("Failed to allocate refresh token ID:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not allocate refresh token ID"})
@@ -78,7 +78,7 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 
 	if err := ctrl.Repository.CreateRefreshToken(refreshToken); err != nil {
 		// If saving the refresh token fails, release the ID back to Redis
-		_ = ctrl.Infra.Redis.ReleaseID(c.Request.Context(), refreshTokenID)
+		_ = ctrl.Repository.ReleaseID(c.Request.Context(), refreshTokenID)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save refresh token"})
 		return
 	}

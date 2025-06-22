@@ -6,13 +6,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/config"
-	"github.com/tnqbao/gau-account-service/infra"
+	"github.com/tnqbao/gau-account-service/repository"
 	"net/http"
 	"strconv"
 	"strings"
 )
 
-func AuthMiddleware(config *config.EnvConfig, infra *infra.Infra) gin.HandlerFunc {
+func AuthMiddleware(config *config.EnvConfig, repository *repository.Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr := extractToken(c)
 		if tokenStr == "" {
@@ -41,7 +41,7 @@ func AuthMiddleware(config *config.EnvConfig, infra *infra.Infra) gin.HandlerFun
 
 		// Check Redis blacklist
 		ctx := c.Request.Context()
-		revoked, err := infra.Redis.GetBit(ctx, "blacklist_bitmap", jid)
+		revoked, err := repository.GetBit(ctx, "blacklist_bitmap", jid)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Redis error"})
 			c.Abort()

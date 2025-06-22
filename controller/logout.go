@@ -43,7 +43,7 @@ func (ctrl *Controller) Logout(c *gin.Context) {
 		if rowsAffected > 0 {
 			ttl := time.Until(refreshTokenRecord.ExpiresAt)
 			if ttl > 0 {
-				if err := ctrl.Infra.Redis.ReleaseAndBlacklistIDWithTTL(
+				if err := ctrl.Repository.ReleaseAndBlacklistIDWithTTL(
 					c.Request.Context(),
 					refreshTokenRecord.ID,
 					ttl,
