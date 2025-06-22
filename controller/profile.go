@@ -30,7 +30,7 @@ func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
 		return
 	}
 
-	userInfo, err := ctrl.repository.GetUserById(uuidUserId)
+	userInfo, err := ctrl.Repository.GetUserById(uuidUserId)
 	if err != nil {
 		if err.Error() == "record not found" {
 			c.JSON(404, gin.H{"error": "User not found"})
@@ -75,7 +75,7 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 		return
 	}
 
-	user, err := ctrl.repository.GetUserById(userID)
+	user, err := ctrl.Repository.GetUserById(userID)
 	if err != nil {
 		status := http.StatusInternalServerError
 		errMsg := "Internal server error: " + err.Error()
@@ -99,7 +99,7 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 		GithubURL:   req.GitHubURL,
 	}
 
-	updatedUser, err := ctrl.repository.UpdateUser(updateData)
+	updatedUser, err := ctrl.Repository.UpdateUser(updateData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return

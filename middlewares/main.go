@@ -2,8 +2,7 @@ package middlewares
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/tnqbao/gau-account-service/config"
-	"github.com/tnqbao/gau-account-service/service"
+	"github.com/tnqbao/gau-account-service/controller"
 )
 
 type Middlewares struct {
@@ -11,9 +10,9 @@ type Middlewares struct {
 	AuthMiddleware gin.HandlerFunc
 }
 
-func NewMiddlewares(config *config.EnvConfig, service *service.Service) (*Middlewares, error) {
-	cors := CORSMiddleware(config)
-	auth := AuthMiddleware(config, service)
+func NewMiddlewares(ctrl *controller.Controller) (*Middlewares, error) {
+	cors := CORSMiddleware(ctrl.Config.EnvConfig)
+	auth := AuthMiddleware(ctrl.Config.EnvConfig, ctrl.Infra)
 
 	return &Middlewares{
 		CORSMiddleware: cors,

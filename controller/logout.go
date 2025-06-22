@@ -23,7 +23,7 @@ func (ctrl *Controller) Logout(c *gin.Context) {
 	hashedToken := ctrl.hashToken(refreshToken)
 	deviceID := c.GetHeader("X-Device-ID")
 
-	refreshTokenRecord, err := ctrl.repository.GetRefreshTokenByTokenAndDevice(hashedToken, deviceID)
+	refreshTokenRecord, err := ctrl.Repository.GetRefreshTokenByTokenAndDevice(hashedToken, deviceID)
 	if err != nil {
 		log.Println("Error fetching refresh token:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
@@ -32,7 +32,7 @@ func (ctrl *Controller) Logout(c *gin.Context) {
 	}
 
 	if refreshTokenRecord != nil {
-		rowsAffected, err := ctrl.repository.DeleteRefreshTokenByTokenAndDevice(hashedToken, deviceID)
+		rowsAffected, err := ctrl.Repository.DeleteRefreshTokenByTokenAndDevice(hashedToken, deviceID)
 		if err != nil {
 			log.Println("Error deleting refresh token:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
@@ -43,7 +43,7 @@ func (ctrl *Controller) Logout(c *gin.Context) {
 		if rowsAffected > 0 {
 			ttl := time.Until(refreshTokenRecord.ExpiresAt)
 			if ttl > 0 {
-				if err := ctrl.service.Redis.ReleaseAndBlacklistIDWithTTL(
+				if err := ctrl.Infra.Redis.ReleaseAndBlacklistIDWithTTL(
 					c.Request.Context(),
 					refreshTokenRecord.ID,
 					ttl,

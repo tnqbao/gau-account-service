@@ -1,4 +1,4 @@
-package service
+package repository
 
 import (
 	"context"
@@ -13,49 +13,49 @@ const (
 	RefreshTokenBlacklistBitmap = "refresh_token_blacklist_bitmap"
 )
 
-func (r *RedisService) AllocateRefreshTokenID(ctx context.Context) (int64, error) {
-	id, err := r.client.BitPos(ctx, RefreshTokenIDBitmap, 0).Result()
+func (r *Repository) AllocateRefreshTokenID(ctx context.Context) (int64, error) {
+	id, err := r.cacheDb.BitPos(ctx, RefreshTokenIDBitmap, 0).Result()
 	if err != nil || id < 0 {
 		return -1, err
 	}
 
-	if _, err := r.client.SetBit(ctx, RefreshTokenIDBitmap, id, 1).Result(); err != nil {
+	if _, err := r.cacheDb.SetBit(ctx, RefreshTokenIDBitmap, id, 1).Result(); err != nil {
 		return -1, err
 	}
 
 	// Clear blacklist just in case
-	r.client.SetBit(ctx, RefreshTokenBlacklistBitmap, id, 0)
+	r.cacheDb.SetBit(ctx, RefreshTokenBlacklistBitmap, id, 0)
 
 	return id, nil
 }
 
-func (r *RedisService) ReleaseAndBlacklistID(ctx context.Context, id int64) error {
-	if _, err := r.client.SetBit(ctx, RefreshTokenIDBitmap, id, 0).Result(); err != nil {
+func (r *Repository) ReleaseAndBlacklistID(ctx context.Context, id int64) error {
+	if _, err := r.cacheDb.SetBit(ctx, RefreshTokenIDBitmap, id, 0).Result(); err != nil {
 		return err
 	}
-	if _, err := r.client.SetBit(ctx, RefreshTokenBlacklistBitmap, id, 1).Result(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *RedisService) ReleaseID(ctx context.Context, id int64) error {
-	if _, err := r.client.SetBit(ctx, RefreshTokenIDBitmap, id, 0).Result(); err != nil {
+	if _, err := r.cacheDb.SetBit(ctx, RefreshTokenBlacklistBitmap, id, 1).Result(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *RedisService) IsRefreshTokenBlacklisted(ctx context.Context, id int64) (bool, error) {
-	bit, err := r.client.GetBit(ctx, RefreshTokenBlacklistBitmap, id).Result()
+func (r *Repository) ReleaseID(ctx context.Context, id int64) error {
+	if _, err := r.cacheDb.SetBit(ctx, RefreshTokenIDBitmap, id, 0).Result(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *Repository) IsRefreshTokenBlacklisted(ctx context.Context, id int64) (bool, error) {
+	bit, err := r.cacheDb.GetBit(ctx, RefreshTokenBlacklistBitmap, id).Result()
 	if err != nil {
 		return false, err
 	}
 	return bit == 1, nil
 }
 
-func (r *RedisService) ReleaseAndBlacklistIDWithTTL(ctx context.Context, id int64, ttl time.Duration) error {
-	pipe := r.client.TxPipeline()
+func (r *Repository) ReleaseAndBlacklistIDWithTTL(ctx context.Context, id int64, ttl time.Duration) error {
+	pipe := r.cacheDb.TxPipeline()
 
 	// Release ID from bitmap
 	pipe.SetBit(ctx, "blacklist_bitmap", id, 1)
@@ -68,7 +68,7 @@ func (r *RedisService) ReleaseAndBlacklistIDWithTTL(ctx context.Context, id int6
 	return err
 }
 
-func (r *RedisService) CleanupBlacklistBitmap(ctx context.Context) error {
+func (r *Repository) CleanupBlacklistBitmap(ctx context.Context) error {
 	const bitmapKey = "blacklist_bitmap"
 	const blockSize = 1024
 	const maxID = 100_000 // Amount of IDs to scan, adjust as needed
@@ -77,7 +77,7 @@ func (r *RedisService) CleanupBlacklistBitmap(ctx context.Context) error {
 	activeIDs := make(map[int64]struct{})
 	var cursor uint64
 	for {
-		keys, nextCursor, err := r.client.Scan(ctx, cursor, "blacklist_expire:*", 1000).Result()
+		keys, nextCursor, err := r.cacheDb.Scan(ctx, cursor, "blacklist_expire:*", 1000).Result()
 		if err != nil {
 			return fmt.Errorf("scan error: %w", err)
 		}
@@ -107,7 +107,7 @@ func (r *RedisService) CleanupBlacklistBitmap(ctx context.Context) error {
 			cmds = append(cmds, "GET", "u1", start+i)
 		}
 
-		results, err := r.client.Do(ctx, cmds...).Slice()
+		results, err := r.cacheDb.Do(ctx, cmds...).Slice()
 		if err != nil {
 			log.Printf("BITFIELD failed from %d to %d: %v\n", start, end, err)
 			continue
@@ -122,7 +122,7 @@ func (r *RedisService) CleanupBlacklistBitmap(ctx context.Context) error {
 
 			// If the ID is not in the active set, clear the bit
 			if _, isAlive := activeIDs[id]; !isAlive {
-				_, err := r.client.SetBit(ctx, bitmapKey, id, 0).Result()
+				_, err := r.cacheDb.SetBit(ctx, bitmapKey, id, 0).Result()
 				if err != nil {
 					log.Printf("Failed to clear bit %d: %v\n", id, err)
 				}
@@ -134,6 +134,6 @@ func (r *RedisService) CleanupBlacklistBitmap(ctx context.Context) error {
 	return nil
 }
 
-func (r *RedisService) GetBit(ctx context.Context, key string, offset int64) (int64, error) {
-	return r.client.GetBit(ctx, key, offset).Result()
+func (r *Repository) GetBit(ctx context.Context, key string, offset int64) (int64, error) {
+	return r.cacheDb.GetBit(ctx, key, offset).Result()
 }

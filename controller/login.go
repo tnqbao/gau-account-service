@@ -31,7 +31,7 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 	// === Refresh Token ===
 
 	// Lấy ID rảnh từ Redis bitmap
-	refreshTokenID, err := ctrl.service.Redis.AllocateRefreshTokenID(c.Request.Context())
+	refreshTokenID, err := ctrl.Infra.Redis.AllocateRefreshTokenID(c.Request.Context())
 	if err != nil {
 		log.Println("Failed to allocate refresh token ID:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not allocate refresh token ID"})
@@ -50,10 +50,10 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 		ExpiresAt: refreshTokenExpiry,
 	}
 
-	if err := ctrl.repository.CreateRefreshToken(refreshTokenModel); err != nil {
+	if err := ctrl.Repository.CreateRefreshToken(refreshTokenModel); err != nil {
 		log.Println("Failed to save refresh token:", err)
 		// Nếu lỗi xảy ra, nên trả ID lại
-		_ = ctrl.service.Redis.ReleaseID(c.Request.Context(), refreshTokenID)
+		_ = ctrl.Infra.Redis.ReleaseID(c.Request.Context(), refreshTokenID)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not store refresh token"})
 		return
 	}

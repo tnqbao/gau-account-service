@@ -1,4 +1,4 @@
-package service
+package infra
 
 import (
 	"fmt"
@@ -8,11 +8,11 @@ import (
 	"log"
 )
 
-type PostgresService struct {
+type PostgresClient struct {
 	DB *gorm.DB
 }
 
-func InitPostgresService(cfg *config.EnvConfig) *PostgresService {
+func InitPostgresClient(cfg *config.EnvConfig) *PostgresClient {
 	pgUser := cfg.Postgres.Username
 	pgPassword := cfg.Postgres.Password
 	pgHost := cfg.Postgres.HOST
@@ -34,5 +34,5 @@ func InitPostgresService(cfg *config.EnvConfig) *PostgresService {
 
 	log.Println("PostgreSQL connected at", pgHost)
 
-	return &PostgresService{DB: db}
+	return &PostgresClient{DB: db}
 }

@@ -45,7 +45,7 @@ func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 		Gender:      &req.Gender,
 	}
 
-	if err := ctrl.repository.CreateUser(&user); err != nil {
+	if err := ctrl.Repository.CreateUser(&user); err != nil {
 		log.Println("Error creating user :", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
