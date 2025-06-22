@@ -21,7 +21,7 @@ jobs:
       - name: Build Go binary
         run: |
           go mod download
-          go build -o bin/gau-account-service ./cmd/main.go
+          go build -o bin/gau-account-service ./main.go
 
       # Optional: Upload built binary as artifact
       # - name: Upload binary
