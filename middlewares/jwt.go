@@ -6,13 +6,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/config"
-	"github.com/tnqbao/gau-account-service/service"
+	"github.com/tnqbao/gau-account-service/repository"
 	"net/http"
 	"strconv"
 	"strings"
 )
 
-func AuthMiddleware(cfg *config.EnvConfig, svc *service.Service) gin.HandlerFunc {
+func AuthMiddleware(config *config.EnvConfig, repository *repository.Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr := extractToken(c)
 		if tokenStr == "" {
@@ -20,7 +20,7 @@ func AuthMiddleware(cfg *config.EnvConfig, svc *service.Service) gin.HandlerFunc
 			return
 		}
 
-		token, err := parseToken(tokenStr, cfg)
+		token, err := parseToken(tokenStr, config)
 		if err != nil || !token.Valid {
 			abortUnauthorized(c, "Invalid or expired token")
 			return
@@ -41,7 +41,7 @@ func AuthMiddleware(cfg *config.EnvConfig, svc *service.Service) gin.HandlerFunc
 
 		// Check Redis blacklist
 		ctx := c.Request.Context()
-		revoked, err := svc.Redis.GetBit(ctx, "blacklist_bitmap", jid)
+		revoked, err := repository.GetBit(ctx, "blacklist_bitmap", jid)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Redis error"})
 			c.Abort()
@@ -75,8 +75,8 @@ func extractToken(c *gin.Context) string {
 	return ""
 }
 
-func parseToken(tokenString string, cfg *config.EnvConfig) (*jwt.Token, error) {
-	secret := []byte(cfg.JWT.SecretKey)
+func parseToken(tokenString string, config *config.EnvConfig) (*jwt.Token, error) {
+	secret := []byte(config.JWT.SecretKey)
 	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")

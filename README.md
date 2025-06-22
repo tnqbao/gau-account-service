@@ -1,10 +1,10 @@
-# Gau Account Service
+# Gau Account Infra
 
 **Tiếng Việt:**  
-Gau Account Service là một microservice được phát triển bằng ngôn ngữ Go, chịu trách nhiệm chính trong việc quản lý tài khoản người dùng trong hệ thống. Dịch vụ cung cấp các API RESTful phục vụ cho việc đăng ký, đăng nhập, xác thực và cập nhật thông tin tài khoản. Kiến trúc của ứng dụng được thiết kế theo hướng module hóa và dễ mở rộng, hỗ trợ triển khai linh hoạt bằng Docker hoặc Kubernetes.
+Gau Account Infra là một microservice được phát triển bằng ngôn ngữ Go, chịu trách nhiệm chính trong việc quản lý tài khoản người dùng trong hệ thống. Dịch vụ cung cấp các API RESTful phục vụ cho việc đăng ký, đăng nhập, xác thực và cập nhật thông tin tài khoản. Kiến trúc của ứng dụng được thiết kế theo hướng module hóa và dễ mở rộng, hỗ trợ triển khai linh hoạt bằng Docker hoặc Kubernetes.
 
 **English:**  
-Gau Account Service is a microservice developed in Go, responsible for managing user accounts in the system. The service provides RESTful APIs for registration, login, authentication, and updating account information. The application architecture is modular and extensible, supporting flexible deployment with Docker or Kubernetes.
+Gau Account Infra is a microservice developed in Go, responsible for managing user accounts in the system. The service provides RESTful APIs for registration, login, authentication, and updating account information. The application architecture is modular and extensible, supporting flexible deployment with Docker or Kubernetes.
 
 ## Mục lục | Table of Contents
 

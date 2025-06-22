@@ -27,13 +27,13 @@ func (ctrl *Controller) RenewAccessToken(c *gin.Context) {
 
 	hashedRefreshToken := ctrl.hashToken(refreshToken)
 
-	refreshTokenModel, err := ctrl.repository.GetRefreshTokenByTokenAndDevice(hashedRefreshToken, deviceID)
+	refreshTokenModel, err := ctrl.Repository.GetRefreshTokenByTokenAndDevice(hashedRefreshToken, deviceID)
 	if err != nil || refreshTokenModel == nil {
 		handleTokenError(c, err)
 		return
 	}
 
-	user, err := ctrl.repository.GetUserInfoFromRefreshToken(hashedRefreshToken)
+	user, err := ctrl.Repository.GetUserInfoFromRefreshToken(hashedRefreshToken)
 	if err != nil {
 		handleTokenError(c, err)
 		return

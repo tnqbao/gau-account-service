@@ -23,7 +23,6 @@ func (r *Repository) GetUserInfoFromRefreshToken(token string) (*schemas.User, e
 	if err := r.db.Where("token = ?", token).First(&refreshToken).Error; err != nil {
 		return nil, err
 	}
-
 	if refreshToken.ExpiresAt.Before(time.Now()) {
 		return nil, fmt.Errorf("refresh token expired")
 	}

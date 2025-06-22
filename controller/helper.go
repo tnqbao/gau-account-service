@@ -22,16 +22,16 @@ func (ctrl *Controller) CreateAccessToken(claims ClaimsToken) (string, error) {
 		"iat":        time.Now().Unix(),
 	})
 
-	return token.SignedString([]byte(ctrl.config.EnvConfig.JWT.SecretKey))
+	return token.SignedString([]byte(ctrl.Config.EnvConfig.JWT.SecretKey))
 }
 
 func (ctrl *Controller) SetAccessCookie(c *gin.Context, token string, timeExpired int) {
-	globalDomain := ctrl.config.EnvConfig.CORS.GlobalDomain
+	globalDomain := ctrl.Config.EnvConfig.CORS.GlobalDomain
 	c.SetCookie("access_token", token, timeExpired, "/", globalDomain, false, true)
 }
 
 func (ctrl *Controller) SetRefreshCookie(c *gin.Context, token string, timeExpired int) {
-	globalDomain := ctrl.config.EnvConfig.CORS.GlobalDomain
+	globalDomain := ctrl.Config.EnvConfig.CORS.GlobalDomain
 	c.SetCookie("refresh_token", token, timeExpired, "/", globalDomain, false, true)
 }
 
@@ -49,11 +49,11 @@ func (ctrl *Controller) AuthenticateUser(req *ClientRequestBasicLogin, c *gin.Co
 	hashedPassword := ctrl.HashPassword(*req.Password)
 
 	if req.Username != nil {
-		return ctrl.repository.GetUserByIdentifierAndPassword("username", *req.Username, hashedPassword)
+		return ctrl.Repository.GetUserByIdentifierAndPassword("username", *req.Username, hashedPassword)
 	} else if req.Email != nil {
-		return ctrl.repository.GetUserByIdentifierAndPassword("email", *req.Email, hashedPassword)
+		return ctrl.Repository.GetUserByIdentifierAndPassword("email", *req.Email, hashedPassword)
 	} else if req.Phone != nil {
-		return ctrl.repository.GetUserByIdentifierAndPassword("phone", *req.Phone, hashedPassword)
+		return ctrl.Repository.GetUserByIdentifierAndPassword("phone", *req.Phone, hashedPassword)
 	}
 	return nil, fmt.Errorf("missing login identifier")
 }

@@ -31,7 +31,7 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 		return
 	}
 
-	user, err := ctrl.repository.GetUserByEmail(email)
+	user, err := ctrl.Repository.GetUserByEmail(email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			user = &schemas.User{
@@ -43,7 +43,7 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 				IsEmailVerified: googleUser.IsEmailVerified,
 				Permission:      "member",
 			}
-			if err := ctrl.repository.CreateUser(user); err != nil {
+			if err := ctrl.Repository.CreateUser(user); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot create user"})
 				return
 			}
@@ -56,7 +56,7 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 	// === Refresh Token ===
 
 	// Get a free ID from Redis bitmap
-	refreshTokenID, err := ctrl.service.Redis.AllocateRefreshTokenID(c.Request.Context())
+	refreshTokenID, err := ctrl.Repository.AllocateRefreshTokenID(c.Request.Context())
 	if err != nil {
 		log.Println("Failed to allocate refresh token ID:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not allocate refresh token ID"})
@@ -76,9 +76,9 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 		ExpiresAt: refreshTokenExpiry,
 	}
 
-	if err := ctrl.repository.CreateRefreshToken(refreshToken); err != nil {
+	if err := ctrl.Repository.CreateRefreshToken(refreshToken); err != nil {
 		// If saving the refresh token fails, release the ID back to Redis
-		_ = ctrl.service.Redis.ReleaseID(c.Request.Context(), refreshTokenID)
+		_ = ctrl.Repository.ReleaseID(c.Request.Context(), refreshTokenID)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save refresh token"})
 		return
 	}

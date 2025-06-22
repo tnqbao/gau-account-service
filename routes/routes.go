@@ -4,16 +4,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tnqbao/gau-account-service/config"
 	"github.com/tnqbao/gau-account-service/controller"
+	"github.com/tnqbao/gau-account-service/infra"
 	"github.com/tnqbao/gau-account-service/middlewares"
-	"github.com/tnqbao/gau-account-service/service"
 )
 
 func SetupRouter(config *config.Config) *gin.Engine {
-	svc := service.InitServices(config)
+	svc := infra.InitInfra(config)
 	ctrl := controller.NewController(config, svc)
-	r := gin.Default()
 
-	useMiddlewares, err := middlewares.NewMiddlewares(config.EnvConfig, svc)
+	r := gin.Default()
+	useMiddlewares, err := middlewares.NewMiddlewares(ctrl)
 	if err != nil {
 		panic(err)
 	}
