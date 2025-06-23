@@ -1,13 +1,11 @@
 package controller
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/schemas"
 	"github.com/tnqbao/gau-account-service/utils"
 	"log"
-	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
