@@ -3,8 +3,9 @@ package controller
 import (
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/schemas"
+	"github.com/tnqbao/gau-account-service/utils"
 	"log"
-	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,23 +14,23 @@ func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 	var req UserBasicRegistryReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Println("UserRequest binding error:", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "UserRequest binding error: " + err.Error()})
+		utils.JSON400(c, "UserRequest binding error: "+err.Error())
 		return
 	}
 	req.Password = ctrl.HashPassword(req.Password)
 
 	if req.Email != nil && !ctrl.IsValidEmail(*req.Email) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email format"})
+		utils.JSON400(c, "Invalid email format")
 		return
 	}
 
 	if req.Phone != nil && !ctrl.IsValidPhone(*req.Phone) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid phone format"})
+		utils.JSON400(c, "Invalid phone format")
 		return
 	}
 
 	if (req.FullName == "" && req.Email == nil && req.Phone == nil) || req.Password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required fields: FullName/Email/Phone, or Password"})
+		utils.JSON400(c, "Missing required fields: FullName/Email/Phone, or Password")
 		return
 	}
 
@@ -47,11 +48,11 @@ func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 
 	if err := ctrl.Repository.CreateUser(&user); err != nil {
 		log.Println("Error creating user :", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		utils.JSON500(c, "Internal server error")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	utils.JSON200(c, gin.H{
 		"message": "User successfully created",
 	})
 }
