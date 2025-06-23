@@ -6,28 +6,28 @@ import (
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/providers/helper"
 	"github.com/tnqbao/gau-account-service/schemas"
+	"github.com/tnqbao/gau-account-service/utils"
 	"gorm.io/gorm"
 	"log"
-	"net/http"
 	"time"
 )
 
 func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 	var req ClientRequestGoogleAuthentication
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		utils.JSON400(c, "invalid request")
 		return
 	}
 
 	googleUser, err := helper.GetUserInfoFromGoogle(req.Token)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid Google token"})
+		utils.JSON401(c, "invalid Google token")
 		return
 	}
 
 	email := ctrl.CheckNullString(googleUser.Email)
 	if !ctrl.IsValidEmail(email) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid email from Google"})
+		utils.JSON400(c, "invalid email from Google")
 		return
 	}
 
@@ -44,22 +44,21 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 				Permission:      "member",
 			}
 			if err := ctrl.Repository.CreateUser(user); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot create user"})
+				utils.JSON500(c, "cannot create user")
 				return
 			}
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+			utils.JSON500(c, "database error")
 			return
 		}
 	}
 
 	// === Refresh Token ===
 
-	// Get a free ID from Redis bitmap
 	refreshTokenID, err := ctrl.Repository.AllocateRefreshTokenID(c.Request.Context())
 	if err != nil {
 		log.Println("Failed to allocate refresh token ID:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not allocate refresh token ID"})
+		utils.JSON500(c, "could not allocate refresh token ID")
 		return
 	}
 
@@ -77,9 +76,8 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 	}
 
 	if err := ctrl.Repository.CreateRefreshToken(refreshToken); err != nil {
-		// If saving the refresh token fails, release the ID back to Redis
 		_ = ctrl.Repository.ReleaseID(c.Request.Context(), refreshTokenID)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save refresh token"})
+		utils.JSON500(c, "failed to save refresh token")
 		return
 	}
 
@@ -98,21 +96,21 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 		},
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create access token"})
+		utils.JSON500(c, "failed to create access token")
 		return
 	}
 
 	ctrl.SetAccessCookie(c, accessToken, int(accessTokenDuration.Seconds()))
 	ctrl.SetRefreshCookie(c, token, int((30 * 24 * time.Hour).Seconds()))
 
-	c.JSON(http.StatusOK, gin.H{
+	utils.JSON200(c, gin.H{
 		"access_token":  accessToken,
 		"refresh_token": token,
 	})
 }
 
 func (ctrl *Controller) LoginWithFacebook(c *gin.Context) {
-	c.JSON(200, gin.H{
+	utils.JSON200(c, gin.H{
 		"message": "Login with Facebook is not implemented yet",
 	})
 }

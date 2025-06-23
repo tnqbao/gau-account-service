@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/tnqbao/gau-account-service/utils"
-	"net/http"
 	"time"
 )
 

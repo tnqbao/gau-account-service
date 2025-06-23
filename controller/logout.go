@@ -2,8 +2,8 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/tnqbao/gau-account-service/utils"
 	"log"
-	"net/http"
 	"time"
 )
 
@@ -15,7 +15,7 @@ func (ctrl *Controller) Logout(c *gin.Context) {
 
 	if refreshToken == "" {
 		log.Println("No refresh token provided in header or cookie")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No refresh token provided"})
+		utils.JSON400(c, "No refresh token provided")
 		c.Abort()
 		return
 	}
@@ -26,7 +26,7 @@ func (ctrl *Controller) Logout(c *gin.Context) {
 	refreshTokenRecord, err := ctrl.Repository.GetRefreshTokenByTokenAndDevice(hashedToken, deviceID)
 	if err != nil {
 		log.Println("Error fetching refresh token:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		utils.JSON500(c, "Internal server error")
 		c.Abort()
 		return
 	}
@@ -35,7 +35,7 @@ func (ctrl *Controller) Logout(c *gin.Context) {
 		rowsAffected, err := ctrl.Repository.DeleteRefreshTokenByTokenAndDevice(hashedToken, deviceID)
 		if err != nil {
 			log.Println("Error deleting refresh token:", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			utils.JSON500(c, "Internal server error")
 			c.Abort()
 			return
 		}
@@ -60,6 +60,6 @@ func (ctrl *Controller) Logout(c *gin.Context) {
 	c.SetCookie("access_token", "", -1, "/", "", false, true)
 	c.SetCookie("refresh_token", "", -1, "/", "", false, true)
 
-	c.JSON(http.StatusOK, gin.H{"message": "Logout successful"})
+	utils.JSON200(c, gin.H{"message": "Logout successful"})
 	c.Abort()
 }
