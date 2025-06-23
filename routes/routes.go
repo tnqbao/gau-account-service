@@ -36,8 +36,8 @@ func SetupRouter(config *config.Config) *gin.Engine {
 
 		tokenRoutes := apiRoutes.Group("/token")
 		{
-			tokenRoutes.GET("/", ctrl.RenewAccessToken)
-			tokenRoutes.GET("/access_token/:token", ctrl.CheckAccessToken)
+			tokenRoutes.GET("/new-access-token", ctrl.RenewAccessToken)
+			tokenRoutes.GET("/check/:token", ctrl.CheckAccessToken)
 		}
 
 		apiRoutes.POST("/logout", ctrl.Logout, useMiddlewares.AuthMiddleware)
