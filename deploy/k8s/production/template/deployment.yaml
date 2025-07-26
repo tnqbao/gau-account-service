@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gau-account-deployment
+  namespace: bao-${DEPLOY_ENV}-env
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gau-account-service
+  template:
+    metadata:
+      labels:
+        app: gau-account-service
+    spec:
+      containers:
+        - name: gau-account-service
+          image: iamqbao/gau_account_service:latest
+          envFrom:
+            - configMapRef:
+                name: bao-${DEPLOY_ENV}-config
+            - secretRef:
+                name: bao-${DEPLOY_ENV}-secret
+          resources:
+            requests:
+              cpu: "300m"
+              memory: "100Mi"
+            limits:
+              cpu: "500m"
+              memory: "500Mi"
+
+---

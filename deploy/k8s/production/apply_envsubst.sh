@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # This script loops through each file in the template folder,
 # applies envsubst, and writes the output to the base folder.
 
