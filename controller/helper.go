@@ -5,25 +5,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/schemas"
 	"net/http"
-	"time"
 )
-
-func (ctrl *Controller) CreateAccessToken(claims ClaimsToken) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"jid":        claims.JID,
-		"user_id":    claims.UserID,
-		"permission": claims.UserPermission,
-		"fullname":   claims.FullName,
-		"exp":        claims.ExpiresAt.Unix(),
-		"iat":        time.Now().Unix(),
-	})
-
-	return token.SignedString([]byte(ctrl.Config.EnvConfig.JWT.SecretKey))
-}
 
 func (ctrl *Controller) SetAccessCookie(c *gin.Context, token string, timeExpired int) {
 	globalDomain := ctrl.Config.EnvConfig.CORS.GlobalDomain

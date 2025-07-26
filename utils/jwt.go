@@ -1,14 +1,11 @@
 package utils
 
 import (
-	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/config"
-	"github.com/tnqbao/gau-account-service/repository"
-	"strconv"
 	"strings"
 )
 
@@ -34,29 +31,6 @@ func ParseToken(tokenString string, config *config.EnvConfig) (*jwt.Token, error
 	})
 }
 
-func ExtractJID(claims jwt.MapClaims) (int64, error) {
-	if val, ok := claims["jti"]; ok {
-		return ParseJIDValue(val)
-	}
-	if val, ok := claims["jid"]; ok {
-		return ParseJIDValue(val)
-	}
-	return 0, errors.New("Token is missing jti/jid")
-}
-
-func ParseJIDValue(val interface{}) (int64, error) {
-	switch v := val.(type) {
-	case float64:
-		return int64(v), nil
-	case int64:
-		return v, nil
-	case string:
-		return strconv.ParseInt(v, 10, 64)
-	default:
-		return 0, errors.New("Invalid jid format")
-	}
-}
-
 func InjectClaimsToContext(c *gin.Context, claims jwt.MapClaims) error {
 	userIDStr, ok := claims["user_id"].(string)
 	if !ok {
@@ -74,32 +48,4 @@ func InjectClaimsToContext(c *gin.Context, claims jwt.MapClaims) error {
 		c.Set("permission", "")
 	}
 	return nil
-}
-
-func ValidateToken(ctx context.Context, tokenStr string, config *config.EnvConfig, repo *repository.Repository) (jwt.MapClaims, error) {
-	// Parse token
-	token, err := ParseToken(tokenStr, config)
-	if err != nil || !token.Valid {
-		return nil, errors.New("invalid or expired token")
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return nil, errors.New("invalid token claims")
-	}
-
-	// Check blacklist
-	jid, err := ExtractJID(claims)
-	if err != nil {
-		return nil, err
-	}
-	revoked, err := repo.GetBit(ctx, "blacklist_bitmap", jid)
-	if err != nil {
-		return nil, errors.New("redis error")
-	}
-	if revoked == 1 {
-		return nil, errors.New("token has been revoked")
-	}
-
-	return claims, nil
 }

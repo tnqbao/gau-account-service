@@ -5,13 +5,13 @@ import (
 	"time"
 )
 
-func TestDeployment(c *gin.Context) {
+func (ctrl *Controller) TestDeployment(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"message": "Checked Deployment: " + time.Now().String(),
 	})
 }
 
-func CheckHealth(c *gin.Context) {
+func (ctrl *Controller) CheckHealth(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"message": "Checked Health: " + time.Now().String(),
 	})

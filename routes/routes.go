@@ -9,8 +9,8 @@ import (
 )
 
 func SetupRouter(config *config.Config) *gin.Engine {
-	svc := infra.InitInfra(config)
-	ctrl := controller.NewController(config, svc)
+	inf := infra.InitInfra(config)
+	ctrl := controller.NewController(config, inf)
 
 	r := gin.Default()
 	useMiddlewares, err := middlewares.NewMiddlewares(ctrl)
@@ -34,13 +34,14 @@ func SetupRouter(config *config.Config) *gin.Engine {
 			profileRoutes.PUT("/", ctrl.UpdateAccountInfo)
 		}
 
-		apiRoutes.GET("/token", ctrl.RenewAccessToken)
 		apiRoutes.POST("/logout", ctrl.Logout, useMiddlewares.AuthMiddleware)
 
 		ssoRoutes := apiRoutes.Group("/sso")
 		{
 			ssoRoutes.POST("/google", ctrl.LoginWithGoogle)
 		}
+
+		apiRoutes.GET("/", ctrl.CheckHealth)
 	}
 	return r
 }

@@ -2,13 +2,11 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/tnqbao/gau-account-service/providers/helper"
+	"github.com/tnqbao/gau-account-service/provider"
 	"github.com/tnqbao/gau-account-service/schemas"
 	"github.com/tnqbao/gau-account-service/utils"
 	"gorm.io/gorm"
-	"log"
 	"time"
 )
 
@@ -19,7 +17,7 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 		return
 	}
 
-	googleUser, err := helper.GetUserInfoFromGoogle(req.Token)
+	googleUser, err := provider.GetUserInfoFromGoogle(req.Token)
 	if err != nil {
 		utils.JSON401(c, "invalid Google token")
 		return
@@ -53,59 +51,31 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 		}
 	}
 
-	// === Refresh Token ===
+	deviceID := c.GetHeader("X-Device-ID")
+	if deviceID == "" {
+		utils.JSON400(c, "X-Device-ID header is required")
+		return
+	}
 
-	refreshTokenID, err := ctrl.Repository.AllocateRefreshTokenID(c.Request.Context())
+	accessToken, refreshToken, expiresAt, err := ctrl.Provider.AuthorizationServiceProvider.CreateNewToken(
+		user.UserID,
+		user.Permission,
+		deviceID,
+	)
 	if err != nil {
-		log.Println("Failed to allocate refresh token ID:", err)
-		utils.JSON500(c, "could not allocate refresh token ID")
+		utils.JSON500(c, "failed to generate token")
 		return
 	}
 
-	token := ctrl.GenerateToken()
-	hashedRefresh := ctrl.hashToken(token)
-	refreshTokenExpiry := time.Now().Add(30 * 24 * time.Hour)
+	expiresIn := int(time.Until(expiresAt).Seconds())
 
-	refreshToken := &schemas.RefreshToken{
-		ID:        refreshTokenID,
-		UserID:    user.UserID,
-		Token:     hashedRefresh,
-		DeviceID:  c.GetHeader("X-Device-ID"),
-		CreatedAt: time.Now(),
-		ExpiresAt: refreshTokenExpiry,
-	}
-
-	if err := ctrl.Repository.CreateRefreshToken(refreshToken); err != nil {
-		_ = ctrl.Repository.ReleaseID(c.Request.Context(), refreshTokenID)
-		utils.JSON500(c, "failed to save refresh token")
-		return
-	}
-
-	// === Access Token ===
-	accessTokenDuration := 15 * time.Minute
-	accessTokenExpiry := time.Now().Add(accessTokenDuration)
-
-	accessToken, err := ctrl.CreateAccessToken(ClaimsToken{
-		JID:            refreshToken.ID,
-		UserID:         user.UserID,
-		UserPermission: user.Permission,
-		FullName:       ctrl.CheckNullString(user.FullName),
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(accessTokenExpiry),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
-	})
-	if err != nil {
-		utils.JSON500(c, "failed to create access token")
-		return
-	}
-
-	ctrl.SetAccessCookie(c, accessToken, int(accessTokenDuration.Seconds()))
-	ctrl.SetRefreshCookie(c, token, int((30 * 24 * time.Hour).Seconds()))
+	ctrl.SetAccessCookie(c, accessToken, expiresIn)
+	ctrl.SetRefreshCookie(c, refreshToken, 30*24*60*60)
 
 	utils.JSON200(c, gin.H{
 		"access_token":  accessToken,
-		"refresh_token": token,
+		"refresh_token": refreshToken,
+		"expires_in":    expiresIn,
 	})
 }
 

@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"time"
 )
@@ -56,13 +55,4 @@ type UserInformationUpdateReq struct {
 // Client request structure for google login
 type ClientRequestGoogleAuthentication struct {
 	Token string `json:"token" binding:"required"`
-}
-
-// Client access token response structure
-type ClaimsToken struct {
-	JID            int64     `json:"jid"`
-	UserID         uuid.UUID `json:"user_id"`
-	UserPermission string    `json:"permission"`
-	FullName       string    `json:"fullname"`
-	jwt.RegisteredClaims
 }
