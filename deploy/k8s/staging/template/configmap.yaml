@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: bao-${DEPLOY_ENV}-config
+  name: bao-account-${DEPLOY_ENV}-config
   namespace: bao-${DEPLOY_ENV}-env
   labels:
     app: bao-platform
