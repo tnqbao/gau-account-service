@@ -10,7 +10,7 @@ spec:
     - host: ${DOMAIN_NAME}
       http:
         paths:
-          - path: /v2/api/account/
+          - path: /api/v2/account/
             pathType: Prefix
             backend:
               service:
