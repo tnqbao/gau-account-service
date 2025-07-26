@@ -19,7 +19,7 @@ func SetupRouter(config *config.Config) *gin.Engine {
 	}
 
 	r.Use(useMiddlewares.CORSMiddleware)
-	apiRoutes := r.Group("/api/account/v2")
+	apiRoutes := r.Group("/api/v2/account/")
 	{
 		identifierRoutes := apiRoutes.Group("/basic")
 		{
