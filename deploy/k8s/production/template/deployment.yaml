@@ -18,9 +18,9 @@ spec:
           image: iamqbao/gau_account_service:latest
           envFrom:
             - configMapRef:
-                name: bao-${DEPLOY_ENV}-config
+                name: bao-account-${DEPLOY_ENV}-config
             - secretRef:
-                name: bao-${DEPLOY_ENV}-secret
+                name: bao-account-${DEPLOY_ENV}-secret
           resources:
             requests:
               cpu: "300m"
