@@ -1,9 +1,9 @@
-package helper
+package provider
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/tnqbao/gau-account-service/providers/dto"
+	"github.com/tnqbao/gau-account-service/provider/dto"
 	"github.com/tnqbao/gau-account-service/schemas"
 	"net/http"
 )

@@ -5,7 +5,7 @@ import (
 )
 
 type Infra struct {
-	Redis    *RedisClient
+	//Redis    *RedisClient
 	Postgres *PostgresClient
 }
 
@@ -16,10 +16,10 @@ func InitInfra(cfg *config.Config) *Infra {
 		return infraInstance
 	}
 
-	redis := InitRedisClient(cfg.EnvConfig)
-	if redis == nil {
-		panic("Failed to initialize Redis service")
-	}
+	//redis := InitRedisClient(cfg.EnvConfig)
+	//if redis == nil {
+	//	panic("Failed to initialize Redis service")
+	//}
 
 	postgres := InitPostgresClient(cfg.EnvConfig)
 	if postgres == nil {
@@ -27,7 +27,7 @@ func InitInfra(cfg *config.Config) *Infra {
 	}
 
 	infraInstance = &Infra{
-		Redis:    redis,
+		//Redis:    redis,
 		Postgres: postgres,
 	}
 
