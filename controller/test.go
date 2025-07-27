@@ -13,6 +13,7 @@ func (ctrl *Controller) TestDeployment(c *gin.Context) {
 
 func (ctrl *Controller) CheckHealth(c *gin.Context) {
 	c.JSON(200, gin.H{
-		"message": "Checked Health: " + time.Now().String(),
+		"message": "account service is running",
+		"time":    time.Now().String(),
 	})
 }

@@ -34,13 +34,13 @@ func SetupRouter(config *config.Config) *gin.Engine {
 			profileRoutes.PUT("/", ctrl.UpdateAccountInfo)
 		}
 
+
 		apiRoutes.POST("/logout", ctrl.Logout, useMiddlewares.AuthMiddleware)
 
 		ssoRoutes := apiRoutes.Group("/sso")
 		{
 			ssoRoutes.POST("/google", ctrl.LoginWithGoogle)
 		}
-
 		apiRoutes.GET("/", ctrl.CheckHealth)
 	}
 	return r
