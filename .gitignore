@@ -1,6 +1,5 @@
 # Ignore environment files for security
 .env
-.env.*
 
 # Ignore test files or files not related to main code
 controllers/encrypt/test.go

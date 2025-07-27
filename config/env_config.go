@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"strconv"
 )
 
 type EnvConfig struct {
@@ -28,6 +27,9 @@ type EnvConfig struct {
 		Password string
 		Database int
 	}
+	ExternalService struct {
+		AuthorizationServiceURL string
+	}
 }
 
 func LoadEnvConfig() *EnvConfig {
@@ -47,20 +49,20 @@ func LoadEnvConfig() *EnvConfig {
 	if val := os.Getenv("JWT_EXPIRE"); val != "" {
 		fmt.Sscanf(val, "%d", &config.JWT.Expire)
 	} else {
-		config.JWT.Expire = 3600 * 24 * 7 // Default to 7 days
+		config.JWT.Expire = 3600 * 24 * 7
 	}
 
-	// CORS
 	config.CORS.AllowDomains = os.Getenv("ALLOWED_DOMAINS")
 	config.CORS.GlobalDomain = os.Getenv("GLOBAL_DOMAIN")
 
-	// Redis
-	config.Redis.Address = os.Getenv("REDIS_ADDRESS")
-	config.Redis.Password = os.Getenv("REDIS_PASSWORD")
-	config.Redis.Database, _ = strconv.Atoi(os.Getenv("REDIS_DB"))
-	if config.Redis.Database == 0 {
-		config.Redis.Database = 0 // Default to 0 if not set
-	}
+	//config.Redis.Address = os.Getenv("REDIS_ADDRESS")
+	//config.Redis.Password = os.Getenv("REDIS_PASSWORD")
+	//config.Redis.Database, _ = strconv.Atoi(os.Getenv("REDIS_DB"))
+	//if config.Redis.Database == 0 {
+	//	config.Redis.Database = 0
+	//}
+
+	config.ExternalService.AuthorizationServiceURL = os.Getenv("AUTHORIZATION_SERVICE_URL")
 
 	return &config
 }

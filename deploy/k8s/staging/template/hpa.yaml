@@ -2,26 +2,19 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: gau-account-service-hpa
-  namespace: gau-${DEPLOY_ENV}-env
-  labels:
-    app: gau-account-service
+  namespace: bao-${DEPLOY_ENV}-env
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: gau-account-api-service
+    name: gau-account-service
   minReplicas: 1
-  maxReplicas: 5
+  maxReplicas: 3
   metrics:
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 50
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 70
+          averageUtilization: 75
+---

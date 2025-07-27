@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bao-account-${DEPLOY_ENV}-config
+  namespace: bao-${DEPLOY_ENV}-env
+  labels:
+    app: bao-platform
+    env: ${DEPLOY_ENV}
+data:
+  PGPOOL_HOST: "${PGPOOL_HOST}"
+  PGPOOL_DB: "${PGPOOL_DB}"
+  PGPOOL_USER: "${PGPOOL_USER}"
+  PGPOOL_PORT: "${PGPOOL_PORT}"
+  PGPOOL_URL: "${PGPOOL_URL}"
+  JWT_ALGORITHM: "${JWT_ALGORITHM}"
+  JWT_EXPIRE: "${JWT_EXPIRE}"
+  ALLOWED_DOMAINS: "${ALLOWED_DOMAINS}"
+  GLOBAL_DOMAIN: "${GLOBAL_DOMAIN}"
+  AUTHORIZATION_SERVICE_URL: "${AUTHORIZATION_SERVICE_URL}"

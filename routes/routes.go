@@ -9,8 +9,8 @@ import (
 )
 
 func SetupRouter(config *config.Config) *gin.Engine {
-	svc := infra.InitInfra(config)
-	ctrl := controller.NewController(config, svc)
+	inf := infra.InitInfra(config)
+	ctrl := controller.NewController(config, inf)
 
 	r := gin.Default()
 	useMiddlewares, err := middlewares.NewMiddlewares(ctrl)
@@ -19,7 +19,7 @@ func SetupRouter(config *config.Config) *gin.Engine {
 	}
 
 	r.Use(useMiddlewares.CORSMiddleware)
-	apiRoutes := r.Group("/api/account/v2")
+	apiRoutes := r.Group("/api/v2/account/")
 	{
 		identifierRoutes := apiRoutes.Group("/basic")
 		{
@@ -34,11 +34,6 @@ func SetupRouter(config *config.Config) *gin.Engine {
 			profileRoutes.PUT("/", ctrl.UpdateAccountInfo)
 		}
 
-		tokenRoutes := apiRoutes.Group("/token")
-		{
-			tokenRoutes.GET("/new-access-token", ctrl.RenewAccessToken)
-			tokenRoutes.GET("/check/:token", ctrl.CheckAccessToken)
-		}
 
 		apiRoutes.POST("/logout", ctrl.Logout, useMiddlewares.AuthMiddleware)
 
@@ -46,11 +41,7 @@ func SetupRouter(config *config.Config) *gin.Engine {
 		{
 			ssoRoutes.POST("/google", ctrl.LoginWithGoogle)
 		}
-		checkRoutes := apiRoutes.Group("/check")
-		{
-			//checkRoutes.GET("/deployment", ctrl.TestDeployment)
-			checkRoutes.GET("/", ctrl.CheckHealth)
-		}
+		apiRoutes.GET("/", ctrl.CheckHealth)
 	}
 	return r
 }

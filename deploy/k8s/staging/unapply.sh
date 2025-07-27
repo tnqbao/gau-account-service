@@ -3,4 +3,4 @@
 set -e
 source .env
 sh apply_envsubst.sh
-kubectl delete -k ./
+kubectl --kubeconfig kubeconfig.yaml delete -k ./
