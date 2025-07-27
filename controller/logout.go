@@ -11,7 +11,6 @@ func (ctrl *Controller) Logout(c *gin.Context) {
 	if refreshToken == "" {
 		refreshToken, _ = c.Cookie("refresh_token")
 	}
-
 	if refreshToken == "" {
 		utils.JSON400(c, "No refresh token provided")
 		return
@@ -23,14 +22,12 @@ func (ctrl *Controller) Logout(c *gin.Context) {
 		return
 	}
 
-	err := ctrl.Provider.AuthorizationServiceProvider.RevokeToken(refreshToken, deviceID)
-	if err != nil {
-		log.Println("Logout failed:", err)
+	if err := ctrl.Provider.AuthorizationServiceProvider.RevokeToken(refreshToken, deviceID); err != nil {
+		log.Println("[Logout] RevokeToken failed:", err)
 		utils.JSON500(c, "Failed to revoke token")
 		return
 	}
 
-	// Clear cookies
 	c.SetCookie("access_token", "", -1, "/", "", false, true)
 	c.SetCookie("refresh_token", "", -1, "/", "", false, true)
 
