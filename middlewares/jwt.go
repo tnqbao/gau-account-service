@@ -13,15 +13,12 @@ func AuthMiddleware(authProvider *provider.AuthorizationServiceProvider, config 
 	return func(c *gin.Context) {
 		var tokenStr string
 
-		// 1. Try from cookie or Authorization header
 		tokenStr = utils.ExtractToken(c)
 
-		// 2. Fallback: query param
 		if tokenStr == "" {
 			tokenStr = c.Query("access_token")
 		}
 
-		// 3. Fallback: route param
 		if tokenStr == "" {
 			tokenStr = c.Param("token")
 		}
@@ -33,7 +30,7 @@ func AuthMiddleware(authProvider *provider.AuthorizationServiceProvider, config 
 		}
 
 		if err := authProvider.CheckAccessToken(tokenStr); err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			c.Abort()
 			return
 		}
