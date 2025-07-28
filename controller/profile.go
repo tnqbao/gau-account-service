@@ -57,15 +57,35 @@ func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
 }
 
 func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
-	id := c.Param("user_id")
-	if id == "" {
+	userIdRaw := c.MustGet("user_id")
+	if userIdRaw == nil {
 		utils.JSON400(c, "User ID is required")
 		return
 	}
 
-	userID, err := uuid.Parse(id)
+	var userID uuid.UUID
+	switch v := userIdRaw.(type) {
+	case string:
+		id, err := uuid.Parse(v)
+		if err != nil {
+			utils.JSON400(c, "Invalid User ID format")
+			return
+		}
+		userID = id
+	case uuid.UUID:
+		userID = v
+	default:
+		utils.JSON400(c, "Invalid User ID type")
+		return
+	}
+
+	user, err := ctrl.Repository.GetUserById(userID)
 	if err != nil {
-		utils.JSON400(c, "Invalid User ID format")
+		if err.Error() == "record not found" {
+			utils.JSON404(c, "User not found")
+		} else {
+			utils.JSON500(c, "Internal server error")
+		}
 		return
 	}
 
@@ -75,28 +95,21 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 		return
 	}
 
-	user, err := ctrl.Repository.GetUserById(userID)
-	if err != nil {
-		if err.Error() == "record not found" {
-			utils.JSON404(c, "User not found")
-		} else {
-			utils.JSON500(c, "Internal server error: "+err.Error())
-		}
-		return
-	}
-
 	updateData := &schemas.User{
 		UserID:      user.UserID,
-		Username:    req.Username,
-		FullName:    req.FullName,
-		Email:       req.Email,
-		Phone:       req.Phone,
-		DateOfBirth: req.DateOfBirth,
-		Gender:      req.Gender,
-		FacebookURL: req.FacebookURL,
-		GithubURL:   req.GitHubURL,
+		Username:    utils.Coalesce(req.Username, user.Username),
+		FullName:    utils.Coalesce(req.FullName, user.FullName),
+		Email:       utils.Coalesce(req.Email, user.Email),
+		Phone:       utils.Coalesce(req.Phone, user.Phone),
+		DateOfBirth: utils.Coalesce(req.DateOfBirth, user.DateOfBirth),
+		Gender:      utils.Coalesce(req.Gender, user.Gender),
+		FacebookURL: utils.Coalesce(req.FacebookURL, user.FacebookURL),
+		GithubURL:   utils.Coalesce(req.GitHubURL, user.GithubURL),
+		ImageURL:    user.ImageURL,
+		Permission:  user.Permission,
 	}
 
+	// Gọi hàm cập nhật DB
 	updatedUser, err := ctrl.Repository.UpdateUser(updateData)
 	if err != nil {
 		utils.JSON500(c, "Internal server error")
