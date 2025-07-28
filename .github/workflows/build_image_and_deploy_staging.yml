@@ -71,7 +71,7 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           port: 22
           source: ~/.secret/k8s/kubeconfig.yaml
-          target: ./deploy/k8s/staging/
+          target: ./deploy/k8s/staging/kubeconfig.yaml
 
       - name: Set KUBECONFIG environment variable
         run: echo "KUBECONFIG=$GITHUB_WORKSPACE/deploy/k8s/staging/kubeconfig.yaml" >> $GITHUB_ENV
