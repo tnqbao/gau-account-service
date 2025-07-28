@@ -15,9 +15,41 @@ func (r *Repository) CreateUser(user *schemas.User) error {
 }
 
 func (r *Repository) UpdateUser(user *schemas.User) (*schemas.User, error) {
-	if err := r.db.Save(user).Error; err != nil {
+	data := map[string]interface{}{}
+
+	if user.Username != nil {
+		data["username"] = user.Username
+	}
+	if user.FullName != nil {
+		data["full_name"] = user.FullName
+	}
+	if user.Email != nil {
+		data["email"] = user.Email
+	}
+	if user.Phone != nil {
+		data["phone"] = user.Phone
+	}
+	if user.DateOfBirth != nil {
+		data["date_of_birth"] = user.DateOfBirth
+	}
+	if user.Gender != nil {
+		data["gender"] = user.Gender
+	}
+	if user.FacebookURL != nil {
+		data["facebook_url"] = user.FacebookURL
+	}
+	if user.GithubURL != nil {
+		data["github_url"] = user.GithubURL
+	}
+	if user.ImageURL != nil {
+		data["image_url"] = user.ImageURL
+	}
+
+	err := r.db.Model(&schemas.User{}).Where("user_id = ?", user.UserID).Updates(data).Error
+	if err != nil {
 		return nil, err
 	}
+
 	return user, nil
 }
 
