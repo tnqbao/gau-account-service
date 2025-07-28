@@ -45,6 +45,7 @@ func (r *Repository) UpdateUser(user *schemas.User) (*schemas.User, error) {
 		data["image_url"] = user.ImageURL
 	}
 
+	// Update the user in the database
 	err := r.db.Model(&schemas.User{}).Where("user_id = ?", user.UserID).Updates(data).Error
 	if err != nil {
 		return nil, err
