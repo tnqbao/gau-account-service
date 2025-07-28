@@ -80,3 +80,12 @@ jobs:
       - name: Apply manifests to Kubernetes
         working-directory: ./deploy/k8s/staging
         run: ./apply.sh
+
+      - name: Check active pods
+        run: kubectl get pods -n bao-staging-env
+
+      - name: Restart pods
+        run: |
+          kubectl rollout restart deployment gau-account-deployment -n bao-staging-env
+          sleep 10
+          kubectl get pods -n bao-staging-env

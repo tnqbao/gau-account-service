@@ -16,6 +16,7 @@ spec:
       containers:
         - name: gau-account-service
           image: iamqbao/gau_account_service:latest
+          imagePullPolicy: Always
           envFrom:
             - configMapRef:
                 name: bao-account-${DEPLOY_ENV}-config
