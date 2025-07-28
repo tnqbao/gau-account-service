@@ -61,7 +61,7 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           port: 22
           source: /home/tnqbao/.enviroment/gau-account-service/staging.env
-          target: ./deploy/k8s/staging/
+          target: ./deploy/k8s/staging/.env
 
       - name: Download kubeconfig.yaml from server using appleboy/ssh-action
         uses: appleboy/scp-action@v0.1.7
