@@ -79,6 +79,10 @@ jobs:
       - name: Check Kubernetes access
         run: kubectl get nodes
 
+      - name: Make scripts executable
+        run: |
+          chmod +x ./deploy/k8s/staging/apply.sh
+
       - name: Apply manifests to Kubernetes
         working-directory: ./deploy/k8s/staging
         run: ./apply.sh
