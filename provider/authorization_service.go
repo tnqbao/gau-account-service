@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/tnqbao/gau-account-service/config"
 	"github.com/tnqbao/gau-account-service/provider/dto"
 	"io"
 	"net/http"
@@ -13,11 +14,23 @@ import (
 
 type AuthorizationServiceProvider struct {
 	AuthorizationServiceURL string `json:"authorization_service_url"`
+	PrivateKey              string `json:"private_key,omitempty"`
 }
 
-func NewAuthorizationServiceProvider(url string) *AuthorizationServiceProvider {
+func NewAuthorizationServiceProvider(config *config.EnvConfig) *AuthorizationServiceProvider {
+	url := config.ExternalService.AuthorizationServiceURL
+	if url == "" {
+		panic("Authorization service URL is not configured")
+	}
+
+	privateKey := config.PrivateKey
+	if privateKey == "" {
+		panic("Private key is not configured")
+	}
+
 	return &AuthorizationServiceProvider{
 		AuthorizationServiceURL: url,
+		PrivateKey:              privateKey,
 	}
 }
 
@@ -32,6 +45,7 @@ func (p *AuthorizationServiceProvider) CreateNewToken(userID uuid.UUID, permissi
 		UserID:     userID,
 		Permission: permission,
 	})
+
 	if err != nil {
 		return "", "", time.Time{}, fmt.Errorf("failed to marshal request: %w", err)
 	}
@@ -42,6 +56,7 @@ func (p *AuthorizationServiceProvider) CreateNewToken(userID uuid.UUID, permissi
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Device-ID", deviceID)
+	req.Header.Set("Private-Key", p.PrivateKey)
 
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
@@ -76,6 +91,7 @@ func (p *AuthorizationServiceProvider) RenewAccessToken(refreshToken, deviceID, 
 	req.Header.Set("X-Device-ID", deviceID)
 	req.Header.Set("X-Refresh-Token", refreshToken)
 	req.Header.Set("X-Old-Access-Token", oldAccessToken)
+	req.Header.Set("Private-Key", p.PrivateKey)
 
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
@@ -105,6 +121,8 @@ func (p *AuthorizationServiceProvider) CheckAccessToken(token string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Private-Key", p.PrivateKey)
 
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
@@ -131,6 +149,7 @@ func (p *AuthorizationServiceProvider) RevokeToken(refreshToken, deviceID string
 
 	req.Header.Set("X-Refresh-Token", refreshToken)
 	req.Header.Set("X-Device-ID", deviceID)
+	req.Header.Set("Private-Key", p.PrivateKey)
 
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)

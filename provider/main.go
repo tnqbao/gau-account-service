@@ -11,7 +11,7 @@ type Provider struct {
 var provider *Provider
 
 func InitProvider(cfg *config.EnvConfig) *Provider {
-	authorizationServiceProvider := NewAuthorizationServiceProvider(cfg.ExternalService.AuthorizationServiceURL)
+	authorizationServiceProvider := NewAuthorizationServiceProvider(cfg)
 
 	provider = &Provider{
 		AuthorizationServiceProvider: authorizationServiceProvider,
