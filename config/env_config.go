@@ -30,6 +30,8 @@ type EnvConfig struct {
 	ExternalService struct {
 		AuthorizationServiceURL string
 	}
+
+	PrivateKey string
 }
 
 func LoadEnvConfig() *EnvConfig {
@@ -62,6 +64,8 @@ func LoadEnvConfig() *EnvConfig {
 	//	config.Redis.Database = 0
 	//}
 
+	config.PrivateKey = os.Getenv("PRIVATE_KEY")
+	
 	config.ExternalService.AuthorizationServiceURL = os.Getenv("AUTHORIZATION_SERVICE_URL")
 
 	return &config

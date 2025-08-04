@@ -2,17 +2,13 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
-	"time"
+	"github.com/tnqbao/gau-account-service/utils"
 )
 
 func (ctrl *Controller) TestDeployment(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "Checked Deployment: " + time.Now().String(),
-	})
+	utils.JSON200(c, gin.H{"message": "Deployment test successful"})
 }
 
 func (ctrl *Controller) CheckHealth(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "Checked Health: " + time.Now().String(),
-	})
+	utils.JSON200(c, gin.H{"status": "running"})
 }
