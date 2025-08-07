@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/tnqbao/gau-account-service/config"
+	"io"
 	"mime/multipart"
 	"net/http"
 )
@@ -29,7 +30,7 @@ func NewUploadServiceProvider(config *config.EnvConfig) *UploadServiceProvider {
 	}
 }
 
-func (p *UploadServiceProvider) UploadAvatarImage(userID string, imageData []byte, filename string) (string, error) {
+func (p *UploadServiceProvider) UploadAvatarImage(userID string, imageData []byte, filename string, contentType string) (string, error) {
 	url := fmt.Sprintf("%s/api/v2/upload/image", p.UploadServiceURL)
 
 	// Prepare multipart form data
@@ -41,8 +42,12 @@ func (p *UploadServiceProvider) UploadAvatarImage(userID string, imageData []byt
 		return "", fmt.Errorf("failed to write file_path field: %w", err)
 	}
 
-	// Add file field
-	fw, err := w.CreateFormFile("file", filename)
+	// Add file field with proper content type
+	h := make(map[string][]string)
+	h["Content-Disposition"] = []string{fmt.Sprintf(`form-data; name="file"; filename="%s"`, filename)}
+	h["Content-Type"] = []string{contentType}
+
+	fw, err := w.CreatePart(h)
 	if err != nil {
 		return "", fmt.Errorf("failed to create form file: %w", err)
 	}
@@ -65,7 +70,8 @@ func (p *UploadServiceProvider) UploadAvatarImage(userID string, imageData []byt
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("upload service returned status: %d", resp.Body)
+		raw, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("upload service returned %d: %s", resp.StatusCode, string(raw))
 	}
 	var response struct {
 		FilePath string `json:"file_path"`

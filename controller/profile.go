@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/entity"
@@ -147,7 +148,8 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 		return
 	}
 
-	file, err := c.FormFile("avatar_image")
+	// Change from "avatar_image" to "file" to match the upload service expectation
+	file, err := c.FormFile("file")
 	if err != nil {
 		utils.JSON400(c, "File not found or invalid")
 		return
@@ -158,8 +160,10 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 		return
 	}
 
-	// Validate image type: allow jpeg, jpg, png, gif, webp
+	// Get content type from the uploaded file
 	contentType := file.Header.Get("Content-Type")
+
+	// Validate image type and determine extension
 	var ext string
 	switch contentType {
 	case "image/jpeg":
@@ -172,8 +176,12 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 		ext = "gif"
 	case "image/webp":
 		ext = "webp"
+	case "image/svg+xml":
+		ext = "svg"
+	case "image/x-icon", "image/vnd.microsoft.icon":
+		ext = "ico"
 	default:
-		utils.JSON400(c, "Invalid file type. Only JPEG, JPG, PNG, GIF, and WEBP are allowed")
+		utils.JSON400(c, "Invalid file type. Only JPEG, JPG, PNG, GIF, WEBP, SVG, and ICO are allowed")
 		return
 	}
 
@@ -190,8 +198,9 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 		return
 	}
 
+	// Use userId + extension as filename
 	filename := userID.String() + "." + ext
-	imageURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(userID.String(), fileBytes, filename)
+	imageURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(userID.String(), fileBytes, filename, contentType)
 	if err != nil {
 		utils.JSON500(c, "Failed to upload image: "+err.Error())
 		return
@@ -216,6 +225,6 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 
 	utils.JSON200(c, gin.H{
 		"message":    "Avatar image updated successfully",
-		"avatar_url": ctrl.Config.EnvConfig.ExternalService.CDNServiceURL + "/" + imageURL,
+		"avatar_url": fmt.Sprintf("%s/images/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL),
 	})
 }

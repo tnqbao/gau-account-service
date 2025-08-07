@@ -26,26 +26,26 @@ services:
     ports:
       - "5432:5432"
 
-  pgpool:
-    image: bitnami/pgpool:latest
-    container_name: pgpool
-    env_file:
-      - .env
-    networks:
-      - app-network
-    environment:
-      - PGPOOL_BACKEND_NODES=0:postgres:5432
-      - PGPOOL_POSTGRES_USER=${POSTGRES_USER}
-      - PGPOOL_POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - PGPOOL_SR_CHECK_USER=${POSTGRES_USER}
-      - PGPOOL_SR_CHECK_PASSWORD=${POSTGRES_PASSWORD}
-      - PGPOOL_HEALTH_CHECK_USER=${POSTGRES_USER}
-      - PGPOOL_HEALTH_CHECK_PASSWORD=${POSTGRES_PASSWORD}
-      - PGPOOL_ADMIN_USER=${PGPOOL_ADMIN_USER}
-      - PGPOOL_ADMIN_PASSWORD=${PGPOOL_ADMIN_PASSWORD}
-      - PGPOOL_ENABLE_LOAD_BALANCING=yes
-      - PGPOOL_ENABLE_LOG_CONNECTIONS=yes
-      - PGPOOL_ENABLE_LOG_HOSTNAME=yes
+#  pgpool:
+#    image: bitnami/pgpool:latest
+#    container_name: pgpool
+#    env_file:
+#      - .env
+#    networks:
+#      - app-network
+#    environment:
+#      - PGPOOL_BACKEND_NODES=0:postgres:5432
+#      - PGPOOL_POSTGRES_USER=${POSTGRES_USER}
+#      - PGPOOL_POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+#      - PGPOOL_SR_CHECK_USER=${POSTGRES_USER}
+#      - PGPOOL_SR_CHECK_PASSWORD=${POSTGRES_PASSWORD}
+#      - PGPOOL_HEALTH_CHECK_USER=${POSTGRES_USER}
+#      - PGPOOL_HEALTH_CHECK_PASSWORD=${POSTGRES_PASSWORD}
+#      - PGPOOL_ADMIN_USER=${PGPOOL_ADMIN_USER}
+#      - PGPOOL_ADMIN_PASSWORD=${PGPOOL_ADMIN_PASSWORD}
+#      - PGPOOL_ENABLE_LOAD_BALANCING=yes
+#      - PGPOOL_ENABLE_LOG_CONNECTIONS=yes
+#      - PGPOOL_ENABLE_LOG_HOSTNAME=yes
 
 
 #  redis:
