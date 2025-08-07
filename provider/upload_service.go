@@ -62,7 +62,7 @@ func (p *UploadServiceProvider) UploadAvatarImage(userID string, imageData []byt
 	}
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	req.Header.Set("Private-Key", p.PrivateKey)
-
+  
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
