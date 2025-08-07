@@ -28,7 +28,8 @@ func (ctrl *Controller) LoginWithIdentifierAndPassword(c *gin.Context) {
 
 	user, err := ctrl.AuthenticateUser(&req, c)
 	if err != nil {
-		utils.JSON401(c, err.Error())
+		log.Println("[Login] Failed to authenticate user:", err)
+		utils.JSON401(c, "Failed to authenticate user")
 		return
 	}
 

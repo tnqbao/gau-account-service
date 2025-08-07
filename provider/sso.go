@@ -3,12 +3,12 @@ package provider
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/tnqbao/gau-account-service/entity"
 	"github.com/tnqbao/gau-account-service/provider/dto"
-	"github.com/tnqbao/gau-account-service/schemas"
 	"net/http"
 )
 
-func GetUserInfoFromGoogle(token string) (*schemas.User, error) {
+func GetUserInfoFromGoogle(token string) (*entity.User, error) {
 	req, err := http.NewRequest("GET", "https://www.googleapis.com/oauth2/v3/userinfo", nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -31,7 +31,7 @@ func GetUserInfoFromGoogle(token string) (*schemas.User, error) {
 		return nil, fmt.Errorf("failed to decode google response: %w", err)
 	}
 
-	user := &schemas.User{
+	user := &entity.User{
 		Email:           &gResp.Email,
 		FullName:        &gResp.Name,
 		ImageURL:        &gResp.Picture,

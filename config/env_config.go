@@ -29,8 +29,9 @@ type EnvConfig struct {
 	}
 	ExternalService struct {
 		AuthorizationServiceURL string
+		UploadServiceURL        string
+		CDNServiceURL           string
 	}
-
 	PrivateKey string
 }
 
@@ -65,8 +66,10 @@ func LoadEnvConfig() *EnvConfig {
 	//}
 
 	config.PrivateKey = os.Getenv("PRIVATE_KEY")
-	
+
 	config.ExternalService.AuthorizationServiceURL = os.Getenv("AUTHORIZATION_SERVICE_URL")
+	config.ExternalService.UploadServiceURL = os.Getenv("UPLOAD_SERVICE_URL")
+	config.ExternalService.CDNServiceURL = os.Getenv("CDN_SERVICE_URL")
 
 	return &config
 }

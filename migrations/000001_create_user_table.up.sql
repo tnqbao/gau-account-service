@@ -12,7 +12,7 @@ CREATE TABLE users (
     password VARCHAR(255),
     email VARCHAR(255),
     phone VARCHAR(15),
-    image_url VARCHAR(255) DEFAULT 'https://cdn.daudoo.com/default_image.jpg',
+    avatar_url VARCHAR(255) DEFAULT 'https://cdn.daudoo.com/images/avatar/default_image.jpg',
     is_phone_verified BOOLEAN DEFAULT FALSE,
     is_email_verified BOOLEAN DEFAULT FALSE,
 
