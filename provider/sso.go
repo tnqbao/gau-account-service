@@ -34,7 +34,7 @@ func GetUserInfoFromGoogle(token string) (*entity.User, error) {
 	user := &entity.User{
 		Email:           &gResp.Email,
 		FullName:        &gResp.Name,
-		ImageURL:        &gResp.Picture,
+		AvatarURL:       &gResp.Picture,
 		Username:        &gResp.FamilyName,
 		IsEmailVerified: gResp.EmailVerified,
 	}
