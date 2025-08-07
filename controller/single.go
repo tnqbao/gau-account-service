@@ -3,8 +3,8 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/tnqbao/gau-account-service/entity"
 	"github.com/tnqbao/gau-account-service/provider"
-	"github.com/tnqbao/gau-account-service/schemas"
 	"github.com/tnqbao/gau-account-service/utils"
 	"gorm.io/gorm"
 	"time"
@@ -32,11 +32,11 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 	user, err := ctrl.Repository.GetUserByEmail(email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			user = &schemas.User{
+			user = &entity.User{
 				UserID:          uuid.New(),
 				Email:           googleUser.Email,
 				FullName:        googleUser.FullName,
-				ImageURL:        googleUser.ImageURL,
+				AvatarURL:       googleUser.AvatarURL,
 				Username:        googleUser.Username,
 				IsEmailVerified: googleUser.IsEmailVerified,
 				Permission:      "member",

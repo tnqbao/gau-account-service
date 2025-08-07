@@ -32,6 +32,7 @@ func SetupRouter(config *config.Config) *gin.Engine {
 			profileRoutes.Use(useMiddlewares.AuthMiddleware)
 			profileRoutes.GET("/", ctrl.GetAccountInfo)
 			profileRoutes.PUT("/", ctrl.UpdateAccountInfo)
+			profileRoutes.PATCH("/avatar", ctrl.UpdateAvatarImage)
 		}
 
 		apiRoutes.POST("/logout", useMiddlewares.AuthMiddleware, ctrl.Logout)

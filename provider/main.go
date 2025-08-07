@@ -6,15 +6,17 @@ import (
 
 type Provider struct {
 	AuthorizationServiceProvider *AuthorizationServiceProvider
+	UploadServiceProvider        *UploadServiceProvider
 }
 
 var provider *Provider
 
 func InitProvider(cfg *config.EnvConfig) *Provider {
 	authorizationServiceProvider := NewAuthorizationServiceProvider(cfg)
-
+	uploadServiceProvider := NewUploadServiceProvider(cfg)
 	provider = &Provider{
 		AuthorizationServiceProvider: authorizationServiceProvider,
+		UploadServiceProvider:        uploadServiceProvider,
 	}
 
 	return provider
