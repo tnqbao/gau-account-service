@@ -57,7 +57,6 @@ func (p *UploadServiceProvider) UploadAvatarImage(userID string, imageData []byt
 	}
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	req.Header.Set("Private-Key", p.PrivateKey)
-	req.Header.Set("X-User-ID", userID)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -66,7 +65,7 @@ func (p *UploadServiceProvider) UploadAvatarImage(userID string, imageData []byt
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("upload service returned status: %d", resp.StatusCode)
+		return "", fmt.Errorf("upload service returned status: %d", resp.Body)
 	}
 	var response struct {
 		FilePath string `json:"file_path"`
