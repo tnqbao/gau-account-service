@@ -216,6 +216,7 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 		return
 	}
 
+	imageURL = fmt.Sprintf("%s/images/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL)
 	user.AvatarURL = &imageURL
 
 	if _, err := ctrl.Repository.UpdateUser(user); err != nil {
@@ -225,6 +226,6 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 
 	utils.JSON200(c, gin.H{
 		"message":    "Avatar image updated successfully",
-		"avatar_url": fmt.Sprintf("%s/images/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL),
+		"avatar_url": imageURL,
 	})
 }
