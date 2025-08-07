@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/tnqbao/gau-account-service/config"
+	"io"
+	"mime/multipart"
 	"net/http"
 )
 
@@ -28,15 +30,39 @@ func NewUploadServiceProvider(config *config.EnvConfig) *UploadServiceProvider {
 	}
 }
 
-func (p *UploadServiceProvider) UploadAvatarImage(userID string, imageData []byte) (string, error) {
+func (p *UploadServiceProvider) UploadAvatarImage(userID string, imageData []byte, filename string, contentType string) (string, error) {
 	url := fmt.Sprintf("%s/api/v2/upload/image", p.UploadServiceURL)
-	req, err := http.NewRequest(http.MethodPatch, url, bytes.NewBuffer(imageData))
+
+	// Prepare multipart form data
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+
+	// Add file_path field
+	if err := w.WriteField("file_path", "avatar"); err != nil {
+		return "", fmt.Errorf("failed to write file_path field: %w", err)
+	}
+
+	// Add file field with proper content type
+	h := make(map[string][]string)
+	h["Content-Disposition"] = []string{fmt.Sprintf(`form-data; name="file"; filename="%s"`, filename)}
+	h["Content-Type"] = []string{contentType}
+
+	fw, err := w.CreatePart(h)
+	if err != nil {
+		return "", fmt.Errorf("failed to create form file: %w", err)
+	}
+	if _, err := fw.Write(imageData); err != nil {
+		return "", fmt.Errorf("failed to write image data: %w", err)
+	}
+	w.Close()
+
+	req, err := http.NewRequest(http.MethodPatch, url, &b)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/octet-stream")
+	req.Header.Set("Content-Type", w.FormDataContentType())
 	req.Header.Set("Private-Key", p.PrivateKey)
-	req.Header.Set("X-User-ID", userID)
+  
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -44,13 +70,14 @@ func (p *UploadServiceProvider) UploadAvatarImage(userID string, imageData []byt
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("upload service returned status: %d", resp.StatusCode)
+		raw, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("upload service returned %d: %s", resp.StatusCode, string(raw))
 	}
 	var response struct {
-		filePath string `json:"file_path"`
+		FilePath string `json:"file_path"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return "", fmt.Errorf("failed to decode response: %w", err)
 	}
-	return response.filePath, nil
+	return response.FilePath, nil
 }

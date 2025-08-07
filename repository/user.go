@@ -42,7 +42,7 @@ func (r *Repository) UpdateUser(user *entity.User) (*entity.User, error) {
 		data["github_url"] = user.GithubURL
 	}
 	if user.AvatarURL != nil {
-		data["image_url"] = user.AvatarURL
+		data["avatar_url"] = user.AvatarURL
 	}
 
 	// Update the user in the database
