@@ -68,8 +68,17 @@ func LoadEnvConfig() *EnvConfig {
 	config.PrivateKey = os.Getenv("PRIVATE_KEY")
 
 	config.ExternalService.AuthorizationServiceURL = os.Getenv("AUTHORIZATION_SERVICE_URL")
+	if config.ExternalService.AuthorizationServiceURL == "" {
+		config.ExternalService.AuthorizationServiceURL = "http://localhost:8080"
+	}
 	config.ExternalService.UploadServiceURL = os.Getenv("UPLOAD_SERVICE_URL")
+	if config.ExternalService.UploadServiceURL == "" {
+		config.ExternalService.UploadServiceURL = "http://localhost:8081"
+	}
 	config.ExternalService.CDNServiceURL = os.Getenv("CDN_SERVICE_URL")
+	if config.ExternalService.CDNServiceURL == "" {
+		config.ExternalService.CDNServiceURL = "http://localhost:8082"
+	}
 
 	return &config
 }
