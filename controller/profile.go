@@ -158,8 +158,22 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 		return
 	}
 
-	if file.Header.Get("Content-Type") != "image/jpeg" && file.Header.Get("Content-Type") != "image/png" {
-		utils.JSON400(c, "Invalid file type. Only JPEG and PNG are allowed")
+	// Validate image type: allow jpeg, jpg, png, gif, webp
+	contentType := file.Header.Get("Content-Type")
+	var ext string
+	switch contentType {
+	case "image/jpeg":
+		ext = "jpg"
+	case "image/jpg":
+		ext = "jpg"
+	case "image/png":
+		ext = "png"
+	case "image/gif":
+		ext = "gif"
+	case "image/webp":
+		ext = "webp"
+	default:
+		utils.JSON400(c, "Invalid file type. Only JPEG, JPG, PNG, GIF, and WEBP are allowed")
 		return
 	}
 
@@ -176,7 +190,8 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 		return
 	}
 
-	imageURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(userID.String(), fileBytes)
+	filename := userID.String() + "." + ext
+	imageURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(userID.String(), fileBytes, filename)
 	if err != nil {
 		utils.JSON500(c, "Failed to upload image: "+err.Error())
 		return

@@ -48,18 +48,18 @@ services:
       - PGPOOL_ENABLE_LOG_HOSTNAME=yes
 
 
-  redis:
-    image: redis:latest
-    container_name: redis
-    env_file:
-      - .env
-    networks:
-      - app-network
-    command: sh -c "redis-server --requirepass ${REDIS_PASSWORD}"
-    volumes:
-      - redis-data:/data
-    ports:
-      - "6379:6379"
+#  redis:
+#    image: redis:latest
+#    container_name: redis
+#    env_file:
+#      - .env
+#    networks:
+#      - app-network
+#    command: sh -c "redis-server --requirepass ${REDIS_PASSWORD}"
+#    volumes:
+#      - redis-data:/data
+#    ports:
+#      - "6379:6379"
 
 networks:
   app-network:
@@ -68,4 +68,4 @@ networks:
 
 volumes:
   postgres-data:
-  redis-data:
+#  redis-data:

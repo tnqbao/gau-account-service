@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/tnqbao/gau-account-service/config"
+	"mime/multipart"
 	"net/http"
 )
 
@@ -28,15 +29,36 @@ func NewUploadServiceProvider(config *config.EnvConfig) *UploadServiceProvider {
 	}
 }
 
-func (p *UploadServiceProvider) UploadAvatarImage(userID string, imageData []byte) (string, error) {
+func (p *UploadServiceProvider) UploadAvatarImage(userID string, imageData []byte, filename string) (string, error) {
 	url := fmt.Sprintf("%s/api/v2/upload/image", p.UploadServiceURL)
-	req, err := http.NewRequest(http.MethodPatch, url, bytes.NewBuffer(imageData))
+
+	// Prepare multipart form data
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+
+	// Add file_path field
+	if err := w.WriteField("file_path", "avatar"); err != nil {
+		return "", fmt.Errorf("failed to write file_path field: %w", err)
+	}
+
+	// Add file field
+	fw, err := w.CreateFormFile("file", filename)
+	if err != nil {
+		return "", fmt.Errorf("failed to create form file: %w", err)
+	}
+	if _, err := fw.Write(imageData); err != nil {
+		return "", fmt.Errorf("failed to write image data: %w", err)
+	}
+	w.Close()
+
+	req, err := http.NewRequest(http.MethodPatch, url, &b)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/octet-stream")
+	req.Header.Set("Content-Type", w.FormDataContentType())
 	req.Header.Set("Private-Key", p.PrivateKey)
 	req.Header.Set("X-User-ID", userID)
+
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -47,10 +69,10 @@ func (p *UploadServiceProvider) UploadAvatarImage(userID string, imageData []byt
 		return "", fmt.Errorf("upload service returned status: %d", resp.StatusCode)
 	}
 	var response struct {
-		filePath string `json:"file_path"`
+		FilePath string `json:"file_path"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return "", fmt.Errorf("failed to decode response: %w", err)
 	}
-	return response.filePath, nil
+	return response.FilePath, nil
 }
