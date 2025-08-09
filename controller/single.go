@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/entity"
@@ -49,7 +50,9 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 					utils.JSON500(c, "Failed to upload avatar: "+err.Error())
 					return
 				}
-				user.AvatarURL = &imageURL
+				// Add CDN URL prefix
+				fullImageURL := fmt.Sprintf("%s/images/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL)
+				user.AvatarURL = &fullImageURL
 			}
 
 			if err := ctrl.Repository.CreateUser(user); err != nil {
