@@ -163,24 +163,8 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 	// Get content type from the uploaded file
 	contentType := file.Header.Get("Content-Type")
 
-	// Validate image type and determine extension
-	var ext string
-	switch contentType {
-	case "image/jpeg":
-		ext = "jpg"
-	case "image/jpg":
-		ext = "jpg"
-	case "image/png":
-		ext = "png"
-	case "image/gif":
-		ext = "gif"
-	case "image/webp":
-		ext = "webp"
-	case "image/svg+xml":
-		ext = "svg"
-	case "image/x-icon", "image/vnd.microsoft.icon":
-		ext = "ico"
-	default:
+	// Validate image type using helper function
+	if !ctrl.ValidateImageContentType(contentType) {
 		utils.JSON400(c, "Invalid file type. Only JPEG, JPG, PNG, GIF, WEBP, SVG, and ICO are allowed")
 		return
 	}
@@ -198,9 +182,8 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 		return
 	}
 
-	// Use userId + extension as filename
-	filename := userID.String() + "." + ext
-	imageURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(userID.String(), fileBytes, filename, contentType)
+	// Use helper function to upload avatar
+	imageURL, err := ctrl.UploadAvatarFromFile(userID, fileBytes, contentType)
 	if err != nil {
 		utils.JSON500(c, "Failed to upload image: "+err.Error())
 		return
@@ -216,8 +199,9 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 		return
 	}
 
-	imageURL = fmt.Sprintf("%s/images/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL)
-	user.AvatarURL = &imageURL
+	// Add CDN URL prefix
+	fullImageURL := fmt.Sprintf("%s/images/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL)
+	user.AvatarURL = &fullImageURL
 
 	if _, err := ctrl.Repository.UpdateUser(user); err != nil {
 		utils.JSON500(c, "Failed to update user information: "+err.Error())
@@ -226,6 +210,6 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 
 	utils.JSON200(c, gin.H{
 		"message":    "Avatar image updated successfully",
-		"avatar_url": imageURL,
+		"avatar_url": fullImageURL,
 	})
 }

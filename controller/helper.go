@@ -7,7 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/entity"
+	"io"
 	"net/http"
+	"path/filepath"
+	"strings"
 )
 
 func (ctrl *Controller) SetAccessCookie(c *gin.Context, token string, timeExpired int) {
@@ -105,4 +108,118 @@ func handleTokenError(c *gin.Context, err error) {
 	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 	}
+}
+
+// DownloadImageFromURL downloads an image from the given URL and returns the image data and content type
+func (ctrl *Controller) DownloadImageFromURL(imageURL string) ([]byte, string, error) {
+	resp, err := http.Get(imageURL)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to download image: %w", err)
+	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			fmt.Printf("Warning: failed to close response body: %v\n", closeErr)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, "", fmt.Errorf("failed to download image: HTTP %d", resp.StatusCode)
+	}
+
+	fileBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to read image data: %w", err)
+	}
+
+	contentType := resp.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = http.DetectContentType(fileBytes)
+	}
+
+	return fileBytes, contentType, nil
+}
+
+// GetFileExtensionFromContentType returns the appropriate file extension for the given content type
+func (ctrl *Controller) GetFileExtensionFromContentType(contentType string, fallbackURL string) string {
+	switch contentType {
+	case "image/jpeg", "image/jpg":
+		return "jpg"
+	case "image/png":
+		return "png"
+	case "image/webp":
+		return "webp"
+	case "image/svg+xml":
+		return "svg"
+	case "image/x-icon", "image/vnd.microsoft.icon":
+		return "ico"
+	default:
+		// Try to get extension from URL or default to jpg
+		if fallbackURL != "" {
+			if ext := filepath.Ext(fallbackURL); ext != "" {
+				return strings.TrimPrefix(ext, ".")
+			}
+		}
+		return "jpg"
+	}
+}
+
+// UploadAvatarFromURL downloads an image from URL and uploads it to the upload service
+func (ctrl *Controller) UploadAvatarFromURL(userID uuid.UUID, imageURL string) (string, error) {
+	// Download image
+	fileBytes, contentType, err := ctrl.DownloadImageFromURL(imageURL)
+	if err != nil {
+		return "", err
+	}
+
+	// Get file extension
+	extension := ctrl.GetFileExtensionFromContentType(contentType, imageURL)
+
+	// Generate filename: userId.{extension}
+	filename := fmt.Sprintf("%s.%s", userID.String(), extension)
+
+	// Upload to service
+	uploadedURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(userID.String(), fileBytes, filename, contentType)
+	if err != nil {
+		return "", fmt.Errorf("failed to upload avatar: %w", err)
+	}
+
+	return uploadedURL, nil
+}
+
+// UploadAvatarFromFile processes an uploaded file and uploads it to the upload service
+func (ctrl *Controller) UploadAvatarFromFile(userID uuid.UUID, fileBytes []byte, contentType string) (string, error) {
+	// Get file extension
+	extension := ctrl.GetFileExtensionFromContentType(contentType, "")
+
+	// Generate filename: userId.{extension}
+	filename := fmt.Sprintf("%s.%s", userID.String(), extension)
+
+	// Upload to service
+	uploadedURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(userID.String(), fileBytes, filename, contentType)
+	if err != nil {
+		return "", fmt.Errorf("failed to upload avatar: %w", err)
+	}
+
+	return uploadedURL, nil
+}
+
+// ValidateImageContentType validates if the content type is allowed for images
+func (ctrl *Controller) ValidateImageContentType(contentType string) bool {
+	allowedTypes := []string{
+		"image/jpeg",
+		"image/jpg",
+		"image/png",
+		"image/gif",
+		"image/webp",
+		"image/svg+xml",
+		"image/x-icon",
+		"image/vnd.microsoft.icon",
+	}
+
+	for _, allowedType := range allowedTypes {
+		if contentType == allowedType {
+			return true
+		}
+	}
+	return false
 }

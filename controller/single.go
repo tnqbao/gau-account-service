@@ -32,15 +32,26 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 	user, err := ctrl.Repository.GetUserByEmail(email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
+			userID := uuid.New()
 			user = &entity.User{
-				UserID:          uuid.New(),
+				UserID:          userID,
 				Email:           googleUser.Email,
 				FullName:        googleUser.FullName,
-				AvatarURL:       googleUser.AvatarURL,
 				Username:        googleUser.Username,
 				IsEmailVerified: googleUser.IsEmailVerified,
 				Permission:      "member",
 			}
+
+			// Upload avatar image if Google provides one
+			if googleUser.AvatarURL != nil && *googleUser.AvatarURL != "" {
+				imageURL, err := ctrl.UploadAvatarFromURL(userID, *googleUser.AvatarURL)
+				if err != nil {
+					utils.JSON500(c, "Failed to upload avatar: "+err.Error())
+					return
+				}
+				user.AvatarURL = &imageURL
+			}
+
 			if err := ctrl.Repository.CreateUser(user); err != nil {
 				utils.JSON500(c, "cannot create user")
 				return
