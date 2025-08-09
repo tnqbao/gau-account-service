@@ -32,6 +32,7 @@ type UserInfoResponse struct {
 	Email           string     `json:"email,omitempty"`
 	Phone           string     `json:"phone,omitempty"`
 	DateOfBirth     *time.Time `json:"date_of_birth,omitempty"`
+	AvatarURL       string     `json:"avatar_url,omitempty"`
 	GithubUrl       string     `json:"github_url,omitempty"`
 	FacebookUrl     string     `json:"facebook_url,omitempty"`
 	IsEmailVerified bool       `json:"is_email_verified"`

@@ -3,18 +3,22 @@ package repository
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/tnqbao/gau-account-service/schemas"
+	"github.com/tnqbao/gau-account-service/entity"
 	"strings"
 )
 
-func (r *Repository) CreateUser(user *schemas.User) error {
-	if err := r.db.Omit("image_url").Create(user).Error; err != nil {
-		return fmt.Errorf("error creating user credential: %v", err)
+func (r *Repository) CreateUser(user *entity.User) error {
+	if user.AvatarURL == nil || *user.AvatarURL == "" {
+		defaultAvatar := "https://cdn.gauas.online/images/avatar/default_image.jpg"
+		user.AvatarURL = &defaultAvatar
+	}
+	if err := r.db.Create(user).Error; err != nil {
+		return fmt.Errorf("error creating user: %v", err)
 	}
 	return nil
 }
 
-func (r *Repository) UpdateUser(user *schemas.User) (*schemas.User, error) {
+func (r *Repository) UpdateUser(user *entity.User) (*entity.User, error) {
 	data := map[string]interface{}{}
 
 	if user.Username != nil {
@@ -41,12 +45,12 @@ func (r *Repository) UpdateUser(user *schemas.User) (*schemas.User, error) {
 	if user.GithubURL != nil {
 		data["github_url"] = user.GithubURL
 	}
-	if user.ImageURL != nil {
-		data["image_url"] = user.ImageURL
+	if user.AvatarURL != nil {
+		data["avatar_url"] = user.AvatarURL
 	}
 
 	// Update the user in the database
-	err := r.db.Model(&schemas.User{}).Where("user_id = ?", user.UserID).Updates(data).Error
+	err := r.db.Model(&entity.User{}).Where("user_id = ?", user.UserID).Updates(data).Error
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +59,7 @@ func (r *Repository) UpdateUser(user *schemas.User) (*schemas.User, error) {
 }
 
 func (r *Repository) DeleteUser(id uuid.UUID) error {
-	var user schemas.User
+	var user entity.User
 	if err := r.db.Where("user_id = ?", id).First(&user).Error; err != nil {
 		return fmt.Errorf("error finding user with id %s: %v", id, err)
 	}
@@ -65,24 +69,24 @@ func (r *Repository) DeleteUser(id uuid.UUID) error {
 	return nil
 }
 
-func (r *Repository) GetUserById(id uuid.UUID) (*schemas.User, error) {
-	var user schemas.User
+func (r *Repository) GetUserById(id uuid.UUID) (*entity.User, error) {
+	var user entity.User
 	if err := r.db.Where("user_id = ?", id).First(&user).Error; err != nil {
 		return nil, fmt.Errorf("error finding user with id %s: %v", id, err)
 	}
 	return &user, nil
 }
 
-func (r *Repository) GetUserByEmail(email string) (*schemas.User, error) {
-	var user schemas.User
+func (r *Repository) GetUserByEmail(email string) (*entity.User, error) {
+	var user entity.User
 	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
 
-func (r *Repository) GetUserByIdentifierAndPassword(identifierType, identifier, hashedPassword string) (*schemas.User, error) {
-	var user schemas.User
+func (r *Repository) GetUserByIdentifierAndPassword(identifierType, identifier, hashedPassword string) (*entity.User, error) {
+	var user entity.User
 
 	var queryField string
 	switch strings.ToLower(identifierType) {

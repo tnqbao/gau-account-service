@@ -1,10 +1,12 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/tnqbao/gau-account-service/schemas"
+	"github.com/tnqbao/gau-account-service/entity"
 	"github.com/tnqbao/gau-account-service/utils"
+	"io"
 )
 
 func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
@@ -47,6 +49,7 @@ func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
 		Phone:           ctrl.CheckNullString(userInfo.Phone),
 		GithubUrl:       ctrl.CheckNullString(userInfo.GithubURL),
 		FacebookUrl:     ctrl.CheckNullString(userInfo.FacebookURL),
+		AvatarURL:       ctrl.CheckNullString(userInfo.AvatarURL),
 		IsEmailVerified: userInfo.IsEmailVerified,
 		IsPhoneVerified: userInfo.IsPhoneVerified,
 		DateOfBirth:     userInfo.DateOfBirth,
@@ -95,7 +98,7 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 		return
 	}
 
-	updateData := &schemas.User{
+	updateData := &entity.User{
 		UserID:      user.UserID,
 		Username:    utils.Coalesce(req.Username, user.Username),
 		FullName:    utils.Coalesce(req.FullName, user.FullName),
@@ -105,7 +108,7 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 		Gender:      utils.Coalesce(req.Gender, user.Gender),
 		FacebookURL: utils.Coalesce(req.FacebookURL, user.FacebookURL),
 		GithubURL:   utils.Coalesce(req.GitHubURL, user.GithubURL),
-		ImageURL:    user.ImageURL,
+		AvatarURL:   user.AvatarURL,
 		Permission:  user.Permission,
 	}
 
@@ -119,5 +122,110 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 	utils.JSON200(c, gin.H{
 		"message":   "User information updated successfully",
 		"user_info": updatedUser,
+	})
+}
+
+func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
+	userIdRaw := c.MustGet("user_id")
+	if userIdRaw == nil {
+		utils.JSON400(c, "User ID is required")
+		return
+	}
+
+	var userID uuid.UUID
+	switch v := userIdRaw.(type) {
+	case string:
+		id, err := uuid.Parse(v)
+		if err != nil {
+			utils.JSON400(c, "Invalid User ID format")
+			return
+		}
+		userID = id
+	case uuid.UUID:
+		userID = v
+	default:
+		utils.JSON400(c, "Invalid User ID type")
+		return
+	}
+
+	// Change from "avatar_image" to "file" to match the upload service expectation
+	file, err := c.FormFile("file")
+	if err != nil {
+		utils.JSON400(c, "File not found or invalid")
+		return
+	}
+
+	if file.Size > 50*1024*1024 {
+		utils.JSON400(c, "File size exceeds the limit of 50MB")
+		return
+	}
+
+	// Get content type from the uploaded file
+	contentType := file.Header.Get("Content-Type")
+
+	// Validate image type and determine extension
+	var ext string
+	switch contentType {
+	case "image/jpeg":
+		ext = "jpg"
+	case "image/jpg":
+		ext = "jpg"
+	case "image/png":
+		ext = "png"
+	case "image/gif":
+		ext = "gif"
+	case "image/webp":
+		ext = "webp"
+	case "image/svg+xml":
+		ext = "svg"
+	case "image/x-icon", "image/vnd.microsoft.icon":
+		ext = "ico"
+	default:
+		utils.JSON400(c, "Invalid file type. Only JPEG, JPG, PNG, GIF, WEBP, SVG, and ICO are allowed")
+		return
+	}
+
+	openedFile, err := file.Open()
+	if err != nil {
+		utils.JSON500(c, "Failed to open uploaded file: "+err.Error())
+		return
+	}
+	defer openedFile.Close()
+
+	fileBytes, err := io.ReadAll(openedFile)
+	if err != nil {
+		utils.JSON500(c, "Failed to read uploaded file: "+err.Error())
+		return
+	}
+
+	// Use userId + extension as filename
+	filename := userID.String() + "." + ext
+	imageURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(userID.String(), fileBytes, filename, contentType)
+	if err != nil {
+		utils.JSON500(c, "Failed to upload image: "+err.Error())
+		return
+	}
+
+	user, err := ctrl.Repository.GetUserById(userID)
+	if err != nil {
+		if err.Error() == "record not found" {
+			utils.JSON404(c, "User not found")
+			return
+		}
+		utils.JSON500(c, "Internal server error")
+		return
+	}
+
+	imageURL = fmt.Sprintf("%s/images/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL)
+	user.AvatarURL = &imageURL
+
+	if _, err := ctrl.Repository.UpdateUser(user); err != nil {
+		utils.JSON500(c, "Failed to update user information: "+err.Error())
+		return
+	}
+
+	utils.JSON200(c, gin.H{
+		"message":    "Avatar image updated successfully",
+		"avatar_url": imageURL,
 	})
 }

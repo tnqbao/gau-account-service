@@ -3,7 +3,7 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/tnqbao/gau-account-service/schemas"
+	"github.com/tnqbao/gau-account-service/entity"
 	"github.com/tnqbao/gau-account-service/utils"
 	"log"
 )
@@ -32,7 +32,7 @@ func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 		return
 	}
 
-	user := schemas.User{
+	user := entity.User{
 		UserID:      uuid.New(),
 		Username:    req.Username,
 		Password:    &req.Password,

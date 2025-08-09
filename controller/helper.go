@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/tnqbao/gau-account-service/schemas"
+	"github.com/tnqbao/gau-account-service/entity"
 	"net/http"
 )
 
@@ -30,7 +30,7 @@ func (ctrl *Controller) HashPassword(password string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func (ctrl *Controller) AuthenticateUser(req *ClientRequestBasicLogin, c *gin.Context) (*schemas.User, error) {
+func (ctrl *Controller) AuthenticateUser(req *ClientRequestBasicLogin, c *gin.Context) (*entity.User, error) {
 	hashedPassword := ctrl.HashPassword(*req.Password)
 
 	if req.Username != nil {
