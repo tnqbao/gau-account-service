@@ -8,8 +8,12 @@ import (
 )
 
 func (r *Repository) CreateUser(user *entity.User) error {
-	if err := r.db.Omit("avatar_url").Create(user).Error; err != nil {
-		return fmt.Errorf("error creating user credential: %v", err)
+	if user.AvatarURL == nil || *user.AvatarURL == "" {
+		defaultAvatar := "https://cdn.gauas.online/images/avatar/default_image.jpg"
+		user.AvatarURL = &defaultAvatar
+	}
+	if err := r.db.Create(user).Error; err != nil {
+		return fmt.Errorf("error creating user: %v", err)
 	}
 	return nil
 }
