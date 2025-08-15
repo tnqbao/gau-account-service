@@ -1,0 +1,26 @@
+{
+  "allowMethods": [
+    "GET",
+    "POST",
+    "PATCH",
+    "HEAD",
+    "PUT",
+    "DELETE",
+    "OPTIONS"
+  ],
+  "allowHeaders": [
+    "Origin",
+    "Content-Type",
+    "Authorization",
+    "x-device-id",
+    "private-key"
+  ],
+  "exposeHeaders": [
+    "Content-Length",
+    "Authorization",
+    "Set-Cookie"
+  ],
+  "allowCredentials": true,
+  "maxAge": 43200
+}
+
