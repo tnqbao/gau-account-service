@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/entity"
-	"github.com/tnqbao/gau-account-service/repository"
 	"gorm.io/gorm"
 	"io"
 	"net/http"
