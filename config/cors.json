@@ -13,7 +13,8 @@
     "Content-Type",
     "Authorization",
     "x-device-id",
-    "private-key"
+    "private-key",
+    "x-refresh-token"
   ],
   "exposeHeaders": [
     "Content-Length",

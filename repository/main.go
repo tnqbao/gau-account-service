@@ -6,7 +6,7 @@ import (
 )
 
 type Repository struct {
-	db *gorm.DB
+	Db *gorm.DB
 	//cacheDb *redis.Client
 }
 
@@ -14,10 +14,10 @@ var repository *Repository
 
 func InitRepository(infra *infra.Infra) *Repository {
 	repository = &Repository{
-		db: infra.Postgres.DB,
+		Db: infra.Postgres.DB,
 		//cacheDb: infra.Redis.Client,
 	}
-	if repository.db == nil {
+	if repository.Db == nil {
 		panic("database connection is nil")
 	}
 	return repository
@@ -28,4 +28,15 @@ func GetRepository() *Repository {
 		panic("repository not initialized")
 	}
 	return repository
+}
+
+// Transaction support methods
+func (r *Repository) BeginTransaction() *gorm.DB {
+	return r.Db.Begin()
+}
+
+func (r *Repository) WithTransaction(tx *gorm.DB) *Repository {
+	return &Repository{
+		Db: tx,
+	}
 }

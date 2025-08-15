@@ -34,31 +34,48 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			userID := uuid.New()
-			user = &entity.User{
+			newUser := &entity.User{
 				UserID:          userID,
 				Email:           googleUser.Email,
 				FullName:        googleUser.FullName,
-				Username:        googleUser.Username,
 				IsEmailVerified: googleUser.IsEmailVerified,
 				Permission:      "member",
 			}
 
-			// Upload avatar image if Google provides one
-			if googleUser.AvatarURL != nil && *googleUser.AvatarURL != "" {
-				imageURL, err := ctrl.UploadAvatarFromURL(userID, *googleUser.AvatarURL)
-				if err != nil {
-					utils.JSON500(c, "Failed to upload avatar: "+err.Error())
-					return
+			err := ctrl.ExecuteInTransaction(func(tx *gorm.DB) error {
+				fullName := ctrl.CheckNullString(googleUser.FullName)
+				if fullName != "" {
+					username, err := ctrl.GenerateUsernameFromFullNameWithTransaction(tx, fullName)
+					if err != nil {
+						return fmt.Errorf("failed to generate username: %w", err)
+					}
+					newUser.Username = &username
 				}
-				// Add CDN URL prefix
-				fullImageURL := fmt.Sprintf("%s/images/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL)
-				user.AvatarURL = &fullImageURL
-			}
 
-			if err := ctrl.Repository.CreateUser(user); err != nil {
-				utils.JSON500(c, "cannot create user")
+				if googleUser.AvatarURL != nil && *googleUser.AvatarURL != "" {
+					imageURL, err := ctrl.UploadAvatarFromURL(userID, *googleUser.AvatarURL)
+					if err != nil {
+						return fmt.Errorf("failed to upload avatar: %w", err)
+					}
+					// Add CDN URL prefix
+					fullImageURL := fmt.Sprintf("%s/images/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL)
+					newUser.AvatarURL = &fullImageURL
+				}
+
+				// Create user within transaction
+				if err := ctrl.Repository.CreateUserWithTransaction(tx, newUser); err != nil {
+					return fmt.Errorf("failed to create user: %w", err)
+				}
+
+				return nil
+			})
+
+			if err != nil {
+				utils.JSON500(c, "Failed to create user: "+err.Error())
 				return
 			}
+
+			user = newUser
 		} else {
 			utils.JSON500(c, "database error")
 			return

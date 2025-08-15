@@ -6,7 +6,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/entity"
 	"github.com/tnqbao/gau-account-service/utils"
+	"gorm.io/gorm"
 	"io"
+	"net/http"
 )
 
 func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
@@ -160,15 +162,6 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 		return
 	}
 
-	// Get content type from the uploaded file
-	contentType := file.Header.Get("Content-Type")
-
-	// Validate image type using helper function
-	if !ctrl.ValidateImageContentType(contentType) {
-		utils.JSON400(c, "Invalid file type. Only JPEG, JPG, PNG, GIF, WEBP, SVG, and ICO are allowed")
-		return
-	}
-
 	openedFile, err := file.Open()
 	if err != nil {
 		utils.JSON500(c, "Failed to open uploaded file: "+err.Error())
@@ -182,29 +175,51 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 		return
 	}
 
-	// Use helper function to upload avatar
-	imageURL, err := ctrl.UploadAvatarFromFile(userID, fileBytes, contentType)
-	if err != nil {
-		utils.JSON500(c, "Failed to upload image: "+err.Error())
+	// Get content type from the uploaded file and detect if needed
+	contentType := file.Header.Get("Content-Type")
+	if contentType == "" || contentType == "application/octet-stream" {
+		contentType = http.DetectContentType(fileBytes)
+	}
+
+	// Validate image type using helper function
+	if !ctrl.ValidateImageContentType(contentType) {
+		utils.JSON400(c, "Invalid file type. Only JPEG, JPG, PNG, GIF, WEBP, SVG, and ICO are allowed")
 		return
 	}
 
-	user, err := ctrl.Repository.GetUserById(userID)
-	if err != nil {
-		if err.Error() == "record not found" {
-			utils.JSON404(c, "User not found")
-			return
+	// Use GORM's Transaction method for avatar upload and database update
+	var fullImageURL string
+	err = ctrl.ExecuteInTransaction(func(tx *gorm.DB) error {
+		// Upload avatar image
+		imageURL, err := ctrl.UploadAvatarFromFile(userID, fileBytes, contentType)
+		if err != nil {
+			return fmt.Errorf("failed to upload image: %w", err)
 		}
-		utils.JSON500(c, "Internal server error")
-		return
-	}
 
-	// Add CDN URL prefix
-	fullImageURL := fmt.Sprintf("%s/images/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL)
-	user.AvatarURL = &fullImageURL
+		// Add CDN URL prefix
+		fullImageURL = fmt.Sprintf("%s/images/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL)
 
-	if _, err := ctrl.Repository.UpdateUser(user); err != nil {
-		utils.JSON500(c, "Failed to update user information: "+err.Error())
+		// Get user and update avatar URL
+		user, err := ctrl.Repository.GetUserById(userID)
+		if err != nil {
+			if err.Error() == "record not found" {
+				return fmt.Errorf("user not found")
+			}
+			return fmt.Errorf("failed to get user: %w", err)
+		}
+
+		user.AvatarURL = &fullImageURL
+
+		// Update user within transaction using repository method
+		if _, err := ctrl.Repository.UpdateUserWithTransaction(tx, user); err != nil {
+			return fmt.Errorf("failed to update user information: %w", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		utils.JSON500(c, err.Error())
 		return
 	}
 

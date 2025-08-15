@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/entity"
+	"gorm.io/gorm"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -222,4 +223,44 @@ func (ctrl *Controller) ValidateImageContentType(contentType string) bool {
 		}
 	}
 	return false
+}
+
+// ExecuteInTransaction executes a function within a database transaction using GORM's Transaction method
+func (ctrl *Controller) ExecuteInTransaction(fn func(tx *gorm.DB) error) error {
+	return ctrl.Repository.Db.Transaction(fn)
+}
+
+// GenerateUsernameFromFullName generates username from fullname: no space, uppercase + count
+func (ctrl *Controller) GenerateUsernameFromFullName(fullName string) string {
+	if fullName == "" {
+		return ""
+	}
+
+	// Remove spaces and convert to uppercase
+	username := strings.ToUpper(strings.ReplaceAll(fullName, " ", ""))
+
+	return username
+}
+
+// GenerateUsernameFromFullNameWithTransaction generates username with count check within transaction
+func (ctrl *Controller) GenerateUsernameFromFullNameWithTransaction(tx *gorm.DB, fullName string) (string, error) {
+	if fullName == "" {
+		return "", fmt.Errorf("fullname cannot be empty")
+	}
+
+	// Remove spaces and convert to uppercase
+	baseUsername := strings.ToUpper(strings.ReplaceAll(fullName, " ", ""))
+
+	// Count users with the same fullname within transaction
+	count, err := ctrl.Repository.CountUsersByFullNameWithTransaction(tx, fullName)
+	if err != nil {
+		return "", fmt.Errorf("failed to count users with fullname: %w", err)
+	}
+
+	// Generate username with count
+	if count > 0 {
+		return fmt.Sprintf("%s%d", baseUsername, count), nil
+	}
+
+	return baseUsername, nil
 }
