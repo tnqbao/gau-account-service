@@ -22,7 +22,7 @@ RUN apk add --no-cache \
 COPY --from=builder /gau_account/gau-account-service.bin .
 COPY migrations ./migrations
 COPY entrypoint.sh .
-
+COPY config ./config
 RUN chmod +x entrypoint.sh
 
 ENTRYPOINT ["./entrypoint.sh"]
