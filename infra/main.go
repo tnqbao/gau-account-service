@@ -7,6 +7,7 @@ import (
 type Infra struct {
 	//Redis    *RedisClient
 	Postgres *PostgresClient
+	Logger   *LoggerClient
 }
 
 var infraInstance *Infra
@@ -26,9 +27,15 @@ func InitInfra(cfg *config.Config) *Infra {
 		panic("Failed to initialize Postgres service")
 	}
 
+	logger := InitLoggerClient(cfg.EnvConfig)
+	if logger == nil {
+		panic("Failed to initialize Logger service")
+	}
+
 	infraInstance = &Infra{
 		//Redis:    redis,
 		Postgres: postgres,
+		Logger:   logger,
 	}
 
 	return infraInstance
