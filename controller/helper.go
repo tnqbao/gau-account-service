@@ -4,14 +4,15 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/tnqbao/gau-account-service/entity"
-	"gorm.io/gorm"
 	"io"
 	"net/http"
 	"path/filepath"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/tnqbao/gau-account-service/entity"
+	"gorm.io/gorm"
 )
 
 func (ctrl *Controller) SetAccessCookie(c *gin.Context, token string, timeExpired int) {
