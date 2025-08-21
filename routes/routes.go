@@ -50,6 +50,15 @@ func SetupRouter(config *config.Config) *gin.Engine {
 			profileRoutes.PATCH("/avatar", ctrl.UpdateAvatarImage)
 		}
 
+		mfaRoutes := apiRoutes.Group("/mfa")
+		{
+			mfaRoutes.Use(useMiddlewares.AuthMiddleware)
+			// TOTP endpoints
+			mfaRoutes.GET("/totp/qr", ctrl.GenerateTOTPQR)
+			mfaRoutes.POST("/totp/enable", ctrl.EnableTOTP)
+			mfaRoutes.POST("/totp/verify", ctrl.VerifyTOTP)
+		}
+
 		apiRoutes.POST("/logout", useMiddlewares.AuthMiddleware, ctrl.Logout)
 
 		ssoRoutes := apiRoutes.Group("/sso")

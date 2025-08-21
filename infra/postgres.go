@@ -2,10 +2,11 @@ package infra
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/tnqbao/gau-account-service/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"log"
 )
 
 type PostgresClient struct {

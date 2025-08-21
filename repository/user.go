@@ -241,3 +241,11 @@ func (r *Repository) GetUserMFAs(userID uuid.UUID) ([]entity.UserMFA, error) {
 	}
 	return mfas, nil
 }
+
+// UpdateUserMFA updates a user MFA record
+func (r *Repository) UpdateUserMFA(mfa *entity.UserMFA) error {
+	if err := r.Db.Save(mfa).Error; err != nil {
+		return fmt.Errorf("error updating user MFA: %v", err)
+	}
+	return nil
+}
