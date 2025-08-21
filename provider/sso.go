@@ -3,12 +3,14 @@ package provider
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/tnqbao/gau-account-service/entity"
 	"github.com/tnqbao/gau-account-service/provider/dto"
 	"net/http"
 )
 
-// GetUserInfoFromGoogle gets user info from Google OAuth API
+
 func GetUserInfoFromGoogle(token string) (*dto.GoogleUserInfo, error) {
+
 	req, err := http.NewRequest("GET", "https://www.googleapis.com/oauth2/v3/userinfo", nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -32,4 +34,5 @@ func GetUserInfoFromGoogle(token string) (*dto.GoogleUserInfo, error) {
 	}
 
 	return &gResp, nil
+
 }

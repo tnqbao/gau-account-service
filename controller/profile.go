@@ -410,6 +410,7 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 
 // UpdateAccountBasicInfo updates only basic account information (no email/phone changes)
 func (ctrl *Controller) UpdateAccountBasicInfo(c *gin.Context) {
+
 	userIdRaw := c.MustGet("user_id")
 	if userIdRaw == nil {
 		utils.JSON400(c, "User ID is required")
