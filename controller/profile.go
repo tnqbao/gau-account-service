@@ -408,6 +408,377 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 	})
 }
 
+// UpdateAccountBasicInfo updates only basic account information (no email/phone changes)
+func (ctrl *Controller) UpdateAccountBasicInfo(c *gin.Context) {
+	userIdRaw := c.MustGet("user_id")
+	if userIdRaw == nil {
+		utils.JSON400(c, "User ID is required")
+		return
+	}
+
+	var userID uuid.UUID
+	switch v := userIdRaw.(type) {
+	case string:
+		id, err := uuid.Parse(v)
+		if err != nil {
+			utils.JSON400(c, "Invalid User ID format")
+			return
+		}
+		userID = id
+	case uuid.UUID:
+		userID = v
+	default:
+		utils.JSON400(c, "Invalid User ID type")
+		return
+	}
+
+	user, err := ctrl.Repository.GetUserById(userID)
+	if err != nil {
+		if err.Error() == "record not found" {
+			utils.JSON404(c, "User not found")
+		} else {
+			utils.JSON500(c, "Internal server error")
+		}
+		return
+	}
+
+	var req UserBasicInfoUpdateReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.JSON400(c, "Invalid request format: "+err.Error())
+		return
+	}
+
+	updateData := &entity.User{
+		UserID:      user.UserID,
+		Username:    utils.Coalesce(req.Username, user.Username),
+		FullName:    utils.Coalesce(req.FullName, user.FullName),
+		Email:       user.Email, // Keep existing email
+		Phone:       user.Phone, // Keep existing phone
+		DateOfBirth: utils.Coalesce(req.DateOfBirth, user.DateOfBirth),
+		Gender:      utils.Coalesce(req.Gender, user.Gender),
+		FacebookURL: utils.Coalesce(req.FacebookURL, user.FacebookURL),
+		GithubURL:   utils.Coalesce(req.GitHubURL, user.GithubURL),
+		AvatarURL:   user.AvatarURL,
+		Permission:  user.Permission,
+		Password:    user.Password,
+	}
+
+	updatedUser, err := ctrl.Repository.UpdateUser(updateData)
+	if err != nil {
+		utils.JSON500(c, "Internal server error")
+		return
+	}
+
+	utils.JSON200(c, gin.H{
+		"message":   "Basic user information updated successfully",
+		"user_info": updatedUser,
+	})
+}
+
+// UpdateAccountSecurityInfo updates only security-related information (email/phone)
+func (ctrl *Controller) UpdateAccountSecurityInfo(c *gin.Context) {
+	userIdRaw := c.MustGet("user_id")
+	if userIdRaw == nil {
+		utils.JSON400(c, "User ID is required")
+		return
+	}
+
+	var userID uuid.UUID
+	switch v := userIdRaw.(type) {
+	case string:
+		id, err := uuid.Parse(v)
+		if err != nil {
+			utils.JSON400(c, "Invalid User ID format")
+			return
+		}
+		userID = id
+	case uuid.UUID:
+		userID = v
+	default:
+		utils.JSON400(c, "Invalid User ID type")
+		return
+	}
+
+	user, err := ctrl.Repository.GetUserById(userID)
+	if err != nil {
+		if err.Error() == "record not found" {
+			utils.JSON404(c, "User not found")
+		} else {
+			utils.JSON500(c, "Internal server error")
+		}
+		return
+	}
+
+	var req UserSecurityInfoUpdateReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.JSON400(c, "Invalid request format: "+err.Error())
+		return
+	}
+
+	// Validate email and phone format if provided
+	if req.Email != nil && !ctrl.IsValidEmail(*req.Email) {
+		utils.JSON400(c, "Invalid email format")
+		return
+	}
+
+	if req.Phone != nil && !ctrl.IsValidPhone(*req.Phone) {
+		utils.JSON400(c, "Invalid phone format")
+		return
+	}
+
+	// Start a database transaction
+	tx := ctrl.Repository.Db.Begin()
+	if tx.Error != nil {
+		utils.JSON500(c, "Internal server error")
+		return
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	updateData := &entity.User{
+		UserID:      user.UserID,
+		Username:    user.Username, // Keep existing
+		FullName:    user.FullName, // Keep existing
+		Email:       utils.Coalesce(req.Email, user.Email),
+		Phone:       utils.Coalesce(req.Phone, user.Phone),
+		DateOfBirth: user.DateOfBirth, // Keep existing
+		Gender:      user.Gender,      // Keep existing
+		FacebookURL: user.FacebookURL, // Keep existing
+		GithubURL:   user.GithubURL,   // Keep existing
+		AvatarURL:   user.AvatarURL,
+		Permission:  user.Permission,
+		Password:    user.Password,
+	}
+
+	// Update user information
+	updatedUser, err := ctrl.Repository.UpdateUserWithTransaction(tx, updateData)
+	if err != nil {
+		tx.Rollback()
+		utils.JSON500(c, "Internal server error")
+		return
+	}
+
+	// Handle email verification if email is being updated
+	if req.Email != nil && (user.Email == nil || *req.Email != *user.Email) {
+		// Check if verification record already exists for this email
+		existingVerification, err := ctrl.Repository.GetUserVerificationByMethodAndValue(userID, "email", *req.Email)
+		if err != nil {
+			tx.Rollback()
+			utils.JSON500(c, "Error checking email verification")
+			return
+		}
+
+		if existingVerification == nil {
+			// Create new email verification record
+			emailVerification := entity.UserVerification{
+				ID:         uuid.New(),
+				UserID:     userID,
+				Method:     "email",
+				Value:      *req.Email,
+				IsVerified: false,
+			}
+			if err := ctrl.Repository.CreateUserVerificationWithTransaction(tx, &emailVerification); err != nil {
+				tx.Rollback()
+				utils.JSON500(c, "Error creating email verification")
+				return
+			}
+		}
+	}
+
+	// Handle phone verification if phone is being updated
+	if req.Phone != nil && (user.Phone == nil || *req.Phone != *user.Phone) {
+		// Check if verification record already exists for this phone
+		existingVerification, err := ctrl.Repository.GetUserVerificationByMethodAndValue(userID, "phone", *req.Phone)
+		if err != nil {
+			tx.Rollback()
+			utils.JSON500(c, "Error checking phone verification")
+			return
+		}
+
+		if existingVerification == nil {
+			// Create new phone verification record
+			phoneVerification := entity.UserVerification{
+				ID:         uuid.New(),
+				UserID:     userID,
+				Method:     "phone",
+				Value:      *req.Phone,
+				IsVerified: false,
+			}
+			if err := ctrl.Repository.CreateUserVerificationWithTransaction(tx, &phoneVerification); err != nil {
+				tx.Rollback()
+				utils.JSON500(c, "Error creating phone verification")
+				return
+			}
+		}
+	}
+
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		utils.JSON500(c, "Internal server error")
+		return
+	}
+
+	utils.JSON200(c, gin.H{
+		"message":   "Security information updated successfully",
+		"user_info": updatedUser,
+	})
+}
+
+// UpdateAccountCompleteInfo updates all account information (basic + security)
+func (ctrl *Controller) UpdateAccountCompleteInfo(c *gin.Context) {
+	userIdRaw := c.MustGet("user_id")
+	if userIdRaw == nil {
+		utils.JSON400(c, "User ID is required")
+		return
+	}
+
+	var userID uuid.UUID
+	switch v := userIdRaw.(type) {
+	case string:
+		id, err := uuid.Parse(v)
+		if err != nil {
+			utils.JSON400(c, "Invalid User ID format")
+			return
+		}
+		userID = id
+	case uuid.UUID:
+		userID = v
+	default:
+		utils.JSON400(c, "Invalid User ID type")
+		return
+	}
+
+	user, err := ctrl.Repository.GetUserById(userID)
+	if err != nil {
+		if err.Error() == "record not found" {
+			utils.JSON404(c, "User not found")
+		} else {
+			utils.JSON500(c, "Internal server error")
+		}
+		return
+	}
+
+	var req UserCompleteInfoUpdateReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.JSON400(c, "Invalid request format: "+err.Error())
+		return
+	}
+
+	// Validate email and phone format if provided
+	if req.Email != nil && !ctrl.IsValidEmail(*req.Email) {
+		utils.JSON400(c, "Invalid email format")
+		return
+	}
+
+	if req.Phone != nil && !ctrl.IsValidPhone(*req.Phone) {
+		utils.JSON400(c, "Invalid phone format")
+		return
+	}
+
+	// Start a database transaction
+	tx := ctrl.Repository.Db.Begin()
+	if tx.Error != nil {
+		utils.JSON500(c, "Internal server error")
+		return
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	updateData := &entity.User{
+		UserID:      user.UserID,
+		Username:    utils.Coalesce(req.Username, user.Username),
+		FullName:    utils.Coalesce(req.FullName, user.FullName),
+		Email:       utils.Coalesce(req.Email, user.Email),
+		Phone:       utils.Coalesce(req.Phone, user.Phone),
+		DateOfBirth: utils.Coalesce(req.DateOfBirth, user.DateOfBirth),
+		Gender:      utils.Coalesce(req.Gender, user.Gender),
+		FacebookURL: utils.Coalesce(req.FacebookURL, user.FacebookURL),
+		GithubURL:   utils.Coalesce(req.GitHubURL, user.GithubURL),
+		AvatarURL:   user.AvatarURL,
+		Permission:  user.Permission,
+		Password:    user.Password,
+	}
+
+	// Update user information
+	updatedUser, err := ctrl.Repository.UpdateUserWithTransaction(tx, updateData)
+	if err != nil {
+		tx.Rollback()
+		utils.JSON500(c, "Internal server error")
+		return
+	}
+
+	// Handle email verification if email is being updated
+	if req.Email != nil && (user.Email == nil || *req.Email != *user.Email) {
+		// Check if verification record already exists for this email
+		existingVerification, err := ctrl.Repository.GetUserVerificationByMethodAndValue(userID, "email", *req.Email)
+		if err != nil {
+			tx.Rollback()
+			utils.JSON500(c, "Error checking email verification")
+			return
+		}
+
+		if existingVerification == nil {
+			// Create new email verification record
+			emailVerification := entity.UserVerification{
+				ID:         uuid.New(),
+				UserID:     userID,
+				Method:     "email",
+				Value:      *req.Email,
+				IsVerified: false,
+			}
+			if err := ctrl.Repository.CreateUserVerificationWithTransaction(tx, &emailVerification); err != nil {
+				tx.Rollback()
+				utils.JSON500(c, "Error creating email verification")
+				return
+			}
+		}
+	}
+
+	// Handle phone verification if phone is being updated
+	if req.Phone != nil && (user.Phone == nil || *req.Phone != *user.Phone) {
+		// Check if verification record already exists for this phone
+		existingVerification, err := ctrl.Repository.GetUserVerificationByMethodAndValue(userID, "phone", *req.Phone)
+		if err != nil {
+			tx.Rollback()
+			utils.JSON500(c, "Error checking phone verification")
+			return
+		}
+
+		if existingVerification == nil {
+			// Create new phone verification record
+			phoneVerification := entity.UserVerification{
+				ID:         uuid.New(),
+				UserID:     userID,
+				Method:     "phone",
+				Value:      *req.Phone,
+				IsVerified: false,
+			}
+			if err := ctrl.Repository.CreateUserVerificationWithTransaction(tx, &phoneVerification); err != nil {
+				tx.Rollback()
+				utils.JSON500(c, "Error creating phone verification")
+				return
+			}
+		}
+	}
+
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		utils.JSON500(c, "Internal server error")
+		return
+	}
+
+	utils.JSON200(c, gin.H{
+		"message":   "Complete user information updated successfully",
+		"user_info": updatedUser,
+	})
+}
+
 func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 	userIdRaw := c.MustGet("user_id")
 	if userIdRaw == nil {

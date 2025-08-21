@@ -102,7 +102,33 @@ type UserInformationUpdateReq struct {
 	GitHubURL   *string    `json:"github_url,omitempty"`
 }
 
-// Client request structure for google register
+// User basic information update request structure (no security data)
+type UserBasicInfoUpdateReq struct {
+	FullName    *string    `json:"fullname,omitempty"`
+	Username    *string    `json:"username,omitempty"`
+	Gender      *string    `json:"gender,omitempty"`
+	DateOfBirth *time.Time `json:"date_of_birth,omitempty"`
+	FacebookURL *string    `json:"facebook_url,omitempty"`
+	GitHubURL   *string    `json:"github_url,omitempty"`
+}
+
+// User security information update request structure (email/phone changes)
+type UserSecurityInfoUpdateReq struct {
+	Email *string `json:"email,omitempty"`
+	Phone *string `json:"phone,omitempty"`
+}
+
+// User complete information update request structure (all fields)
+type UserCompleteInfoUpdateReq struct {
+	FullName    *string    `json:"fullname,omitempty"`
+	Username    *string    `json:"username,omitempty"`
+	Email       *string    `json:"email,omitempty"`
+	Phone       *string    `json:"phone,omitempty"`
+	Gender      *string    `json:"gender,omitempty"`
+	DateOfBirth *time.Time `json:"date_of_birth,omitempty"`
+	FacebookURL *string    `json:"facebook_url,omitempty"`
+	GitHubURL   *string    `json:"github_url,omitempty"`
+}
 
 // Client request structure for google login
 type ClientRequestGoogleAuthentication struct {
