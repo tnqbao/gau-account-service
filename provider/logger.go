@@ -253,7 +253,7 @@ func (lp *LoggerProvider) FatalWithContext(ctx context.Context, msg string, err 
 	lp.logger.FatalWithContext(ctx, msg, err, mergedFields)
 }
 
-// Context-aware logging methods with printf-style formatting
+// InfoWithContextf Context-aware logging methods with printf-style formatting
 func (lp *LoggerProvider) InfoWithContextf(ctx context.Context, format string, args ...interface{}) {
 	lp.logger.InfoWithContextf(ctx, format, args...)
 }
