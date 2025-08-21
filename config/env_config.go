@@ -32,6 +32,10 @@ type EnvConfig struct {
 		UploadServiceURL        string
 		CDNServiceURL           string
 	}
+	Grafana struct {
+		OTLPEndpoint string
+		ServiceName  string
+	}
 	PrivateKey string
 }
 
@@ -78,6 +82,16 @@ func LoadEnvConfig() *EnvConfig {
 	config.ExternalService.CDNServiceURL = os.Getenv("CDN_SERVICE_URL")
 	if config.ExternalService.CDNServiceURL == "" {
 		config.ExternalService.CDNServiceURL = "http://localhost:8082"
+	}
+
+	// Grafana/OpenTelemetry
+	config.Grafana.OTLPEndpoint = os.Getenv("GRAFANA_OTLP_ENDPOINT")
+	if config.Grafana.OTLPEndpoint == "" {
+		config.Grafana.OTLPEndpoint = "grafana.gauas.online:4317"
+	}
+	config.Grafana.ServiceName = os.Getenv("SERVICE_NAME")
+	if config.Grafana.ServiceName == "" {
+		config.Grafana.ServiceName = "gau-account-service"
 	}
 
 	return &config

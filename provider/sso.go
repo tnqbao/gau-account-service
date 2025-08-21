@@ -3,11 +3,10 @@ package provider
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/tnqbao/gau-account-service/entity"
-	"github.com/tnqbao/gau-account-service/provider/dto"
 	"net/http"
-)
 
+	"github.com/tnqbao/gau-account-service/provider/dto"
+)
 
 func GetUserInfoFromGoogle(token string) (*dto.GoogleUserInfo, error) {
 
