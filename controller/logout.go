@@ -1,9 +1,10 @@
 package controller
 
 import (
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"github.com/tnqbao/gau-account-service/utils"
-	"log"
 )
 
 func (ctrl *Controller) Logout(c *gin.Context) {

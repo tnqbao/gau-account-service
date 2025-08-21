@@ -8,7 +8,9 @@ import (
 	"net/http"
 )
 
-func GetUserInfoFromGoogle(token string) (*entity.User, error) {
+
+func GetUserInfoFromGoogle(token string) (*dto.GoogleUserInfo, error) {
+
 	req, err := http.NewRequest("GET", "https://www.googleapis.com/oauth2/v3/userinfo", nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -31,13 +33,6 @@ func GetUserInfoFromGoogle(token string) (*entity.User, error) {
 		return nil, fmt.Errorf("failed to decode google response: %w", err)
 	}
 
-	user := &entity.User{
-		Email:           &gResp.Email,
-		FullName:        &gResp.Name,
-		AvatarURL:       &gResp.Picture,
-		Username:        &gResp.FamilyName,
-		IsEmailVerified: gResp.EmailVerified,
-	}
+	return &gResp, nil
 
-	return user, nil
 }
