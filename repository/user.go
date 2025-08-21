@@ -2,10 +2,11 @@ package repository
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/entity"
 	"gorm.io/gorm"
-	"strings"
 )
 
 func (r *Repository) CreateUser(user *entity.User) error {
@@ -177,4 +178,66 @@ func (r *Repository) GetUserByIdentifierAndPassword(identifierType, identifier, 
 	}
 
 	return &user, nil
+}
+
+// CreateUserVerification creates a new user verification record
+func (r *Repository) CreateUserVerification(verification *entity.UserVerification) error {
+	if err := r.Db.Create(verification).Error; err != nil {
+		return fmt.Errorf("error creating user verification: %v", err)
+	}
+	return nil
+}
+
+// CreateUserVerificationWithTransaction creates a user verification within a transaction
+func (r *Repository) CreateUserVerificationWithTransaction(tx *gorm.DB, verification *entity.UserVerification) error {
+	if err := tx.Create(verification).Error; err != nil {
+		return fmt.Errorf("error creating user verification: %v", err)
+	}
+	return nil
+}
+
+// GetUserVerifications gets all verification records for a user
+func (r *Repository) GetUserVerifications(userID uuid.UUID) ([]entity.UserVerification, error) {
+	var verifications []entity.UserVerification
+	if err := r.Db.Where("user_id = ?", userID).Find(&verifications).Error; err != nil {
+		return nil, fmt.Errorf("error getting user verifications: %v", err)
+	}
+	return verifications, nil
+}
+
+// GetUserVerificationByMethodAndValue gets a specific verification record
+func (r *Repository) GetUserVerificationByMethodAndValue(userID uuid.UUID, method, value string) (*entity.UserVerification, error) {
+	var verification entity.UserVerification
+	if err := r.Db.Where("user_id = ? AND method = ? AND value = ?", userID, method, value).First(&verification).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("error getting user verification: %v", err)
+	}
+	return &verification, nil
+}
+
+// UpdateUserVerification updates a verification record
+func (r *Repository) UpdateUserVerification(verification *entity.UserVerification) error {
+	if err := r.Db.Save(verification).Error; err != nil {
+		return fmt.Errorf("error updating user verification: %v", err)
+	}
+	return nil
+}
+
+// CreateUserMFA creates a new user MFA record
+func (r *Repository) CreateUserMFA(mfa *entity.UserMFA) error {
+	if err := r.Db.Create(mfa).Error; err != nil {
+		return fmt.Errorf("error creating user MFA: %v", err)
+	}
+	return nil
+}
+
+// GetUserMFAs gets all MFA records for a user
+func (r *Repository) GetUserMFAs(userID uuid.UUID) ([]entity.UserMFA, error) {
+	var mfas []entity.UserMFA
+	if err := r.Db.Where("user_id = ?", userID).Find(&mfas).Error; err != nil {
+		return nil, fmt.Errorf("error getting user MFAs: %v", err)
+	}
+	return mfas, nil
 }

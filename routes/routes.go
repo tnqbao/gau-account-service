@@ -30,7 +30,17 @@ func SetupRouter(config *config.Config) *gin.Engine {
 		profileRoutes := apiRoutes.Group("/profile")
 		{
 			profileRoutes.Use(useMiddlewares.AuthMiddleware)
-			profileRoutes.GET("/", ctrl.GetAccountInfo)
+			// Basic profile info (no security data)
+			profileRoutes.GET("/basic", ctrl.GetAccountBasicInfo)
+			// Security info only (verifications & MFA)
+			profileRoutes.GET("/security", ctrl.GetAccountSecurityInfo)
+			// Complete info (basic + security)
+			profileRoutes.GET("/complete", ctrl.GetAccountCompleteInfo)
+
+			// Legacy endpoints for backward compatibility
+			profileRoutes.GET("/", ctrl.GetAccountInfo) // -> maps to basic
+
+			// Update and avatar endpoints
 			profileRoutes.PUT("/", ctrl.UpdateAccountInfo)
 			profileRoutes.PATCH("/avatar", ctrl.UpdateAvatarImage)
 		}

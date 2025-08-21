@@ -2,16 +2,18 @@ package controller
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/entity"
 	"github.com/tnqbao/gau-account-service/utils"
 	"gorm.io/gorm"
-	"io"
-	"net/http"
 )
 
-func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
+// GetAccountBasicInfo returns only basic account information (no security data)
+func (ctrl *Controller) GetAccountBasicInfo(c *gin.Context) {
 	userId := c.MustGet("user_id")
 	if userId == nil {
 		utils.JSON400(c, "User ID is required")
@@ -44,7 +46,193 @@ func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
 		return
 	}
 
-	UserInfoResponse := UserInfoResponse{
+	response := UserBasicInfoResponse{
+		UserId:      userInfo.UserID,
+		FullName:    ctrl.CheckNullString(userInfo.FullName),
+		Email:       ctrl.CheckNullString(userInfo.Email),
+		Phone:       ctrl.CheckNullString(userInfo.Phone),
+		GithubUrl:   ctrl.CheckNullString(userInfo.GithubURL),
+		FacebookUrl: ctrl.CheckNullString(userInfo.FacebookURL),
+		AvatarURL:   ctrl.CheckNullString(userInfo.AvatarURL),
+		Username:    ctrl.CheckNullString(userInfo.Username),
+		Gender:      ctrl.CheckNullString(userInfo.Gender),
+		Permission:  userInfo.Permission,
+		DateOfBirth: userInfo.DateOfBirth,
+	}
+	utils.JSON200(c, gin.H{
+		"user_info": response,
+	})
+}
+
+// GetAccountSecurityInfo returns only verification and MFA information
+func (ctrl *Controller) GetAccountSecurityInfo(c *gin.Context) {
+	userId := c.MustGet("user_id")
+	if userId == nil {
+		utils.JSON400(c, "User ID is required")
+		return
+	}
+
+	var uuidUserId uuid.UUID
+	switch v := userId.(type) {
+	case string:
+		parsed, err := uuid.Parse(v)
+		if err != nil {
+			utils.JSON400(c, "Invalid User ID format")
+			return
+		}
+		uuidUserId = parsed
+	case uuid.UUID:
+		uuidUserId = v
+	default:
+		utils.JSON400(c, "Invalid User ID type")
+		return
+	}
+
+	// Get user verifications
+	verifications, err := ctrl.Repository.GetUserVerifications(uuidUserId)
+	if err != nil {
+		utils.JSON500(c, "Error fetching user verifications")
+		return
+	}
+
+	// Get user MFAs
+	mfas, err := ctrl.Repository.GetUserMFAs(uuidUserId)
+	if err != nil {
+		utils.JSON500(c, "Error fetching user MFAs")
+		return
+	}
+
+	// Convert verifications to response format
+	var verificationInfos []UserVerificationInfo
+	var isEmailVerified, isPhoneVerified bool
+
+	for _, verification := range verifications {
+		verificationInfo := UserVerificationInfo{
+			ID:         verification.ID,
+			Method:     verification.Method,
+			Value:      verification.Value,
+			IsVerified: verification.IsVerified,
+			VerifiedAt: verification.VerifiedAt,
+		}
+		verificationInfos = append(verificationInfos, verificationInfo)
+
+		// Set backward compatibility flags
+		if verification.Method == "email" && verification.IsVerified {
+			isEmailVerified = true
+		}
+		if verification.Method == "phone" && verification.IsVerified {
+			isPhoneVerified = true
+		}
+	}
+
+	// Convert MFAs to response format
+	var mfaInfos []UserMFAInfo
+	for _, mfa := range mfas {
+		mfaInfo := UserMFAInfo{
+			ID:         mfa.ID,
+			Type:       mfa.Type,
+			Enabled:    mfa.Enabled,
+			VerifiedAt: mfa.VerifiedAt,
+		}
+		mfaInfos = append(mfaInfos, mfaInfo)
+	}
+
+	response := UserSecurityInfoResponse{
+		UserId:          uuidUserId,
+		IsEmailVerified: isEmailVerified,
+		IsPhoneVerified: isPhoneVerified,
+		Verifications:   verificationInfos,
+		MFAs:            mfaInfos,
+	}
+	utils.JSON200(c, gin.H{
+		"user_info": response,
+	})
+}
+
+// GetAccountCompleteInfo returns all account information (basic + security)
+func (ctrl *Controller) GetAccountCompleteInfo(c *gin.Context) {
+	userId := c.MustGet("user_id")
+	if userId == nil {
+		utils.JSON400(c, "User ID is required")
+		return
+	}
+
+	var uuidUserId uuid.UUID
+	switch v := userId.(type) {
+	case string:
+		parsed, err := uuid.Parse(v)
+		if err != nil {
+			utils.JSON400(c, "Invalid User ID format")
+			return
+		}
+		uuidUserId = parsed
+	case uuid.UUID:
+		uuidUserId = v
+	default:
+		utils.JSON400(c, "Invalid User ID type")
+		return
+	}
+
+	userInfo, err := ctrl.Repository.GetUserById(uuidUserId)
+	if err != nil {
+		if err.Error() == "record not found" {
+			utils.JSON404(c, "User not found")
+		} else {
+			utils.JSON500(c, "Internal server error")
+		}
+		return
+	}
+
+	// Get user verifications
+	verifications, err := ctrl.Repository.GetUserVerifications(uuidUserId)
+	if err != nil {
+		utils.JSON500(c, "Error fetching user verifications")
+		return
+	}
+
+	// Get user MFAs
+	mfas, err := ctrl.Repository.GetUserMFAs(uuidUserId)
+	if err != nil {
+		utils.JSON500(c, "Error fetching user MFAs")
+		return
+	}
+
+	// Convert verifications to response format
+	var verificationInfos []UserVerificationInfo
+	var isEmailVerified, isPhoneVerified bool
+
+	for _, verification := range verifications {
+		verificationInfo := UserVerificationInfo{
+			ID:         verification.ID,
+			Method:     verification.Method,
+			Value:      verification.Value,
+			IsVerified: verification.IsVerified,
+			VerifiedAt: verification.VerifiedAt,
+		}
+		verificationInfos = append(verificationInfos, verificationInfo)
+
+		// Set backward compatibility flags
+		if verification.Method == "email" && verification.IsVerified {
+			isEmailVerified = true
+		}
+		if verification.Method == "phone" && verification.IsVerified {
+			isPhoneVerified = true
+		}
+	}
+
+	// Convert MFAs to response format
+	var mfaInfos []UserMFAInfo
+	for _, mfa := range mfas {
+		mfaInfo := UserMFAInfo{
+			ID:         mfa.ID,
+			Type:       mfa.Type,
+			Enabled:    mfa.Enabled,
+			VerifiedAt: mfa.VerifiedAt,
+		}
+		mfaInfos = append(mfaInfos, mfaInfo)
+	}
+
+	response := UserCompleteInfoResponse{
 		UserId:          userInfo.UserID,
 		FullName:        ctrl.CheckNullString(userInfo.FullName),
 		Email:           ctrl.CheckNullString(userInfo.Email),
@@ -52,13 +240,22 @@ func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
 		GithubUrl:       ctrl.CheckNullString(userInfo.GithubURL),
 		FacebookUrl:     ctrl.CheckNullString(userInfo.FacebookURL),
 		AvatarURL:       ctrl.CheckNullString(userInfo.AvatarURL),
-		IsEmailVerified: userInfo.IsEmailVerified,
-		IsPhoneVerified: userInfo.IsPhoneVerified,
+		Username:        ctrl.CheckNullString(userInfo.Username),
+		Gender:          ctrl.CheckNullString(userInfo.Gender),
+		Permission:      userInfo.Permission,
+		IsEmailVerified: isEmailVerified,
+		IsPhoneVerified: isPhoneVerified,
 		DateOfBirth:     userInfo.DateOfBirth,
+		Verifications:   verificationInfos,
+		MFAs:            mfaInfos,
 	}
 	utils.JSON200(c, gin.H{
-		"user_info": UserInfoResponse,
+		"user_info": response,
 	})
+}
+
+func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
+	ctrl.GetAccountBasicInfo(c)
 }
 
 func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
@@ -100,6 +297,29 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 		return
 	}
 
+	// Validate email and phone format if provided
+	if req.Email != nil && !ctrl.IsValidEmail(*req.Email) {
+		utils.JSON400(c, "Invalid email format")
+		return
+	}
+
+	if req.Phone != nil && !ctrl.IsValidPhone(*req.Phone) {
+		utils.JSON400(c, "Invalid phone format")
+		return
+	}
+
+	// Start a database transaction
+	tx := ctrl.Repository.Db.Begin()
+	if tx.Error != nil {
+		utils.JSON500(c, "Internal server error")
+		return
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
 	updateData := &entity.User{
 		UserID:      user.UserID,
 		Username:    utils.Coalesce(req.Username, user.Username),
@@ -114,9 +334,70 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 		Permission:  user.Permission,
 	}
 
-	// Gọi hàm cập nhật DB
-	updatedUser, err := ctrl.Repository.UpdateUser(updateData)
+	// Update user information
+	updatedUser, err := ctrl.Repository.UpdateUserWithTransaction(tx, updateData)
 	if err != nil {
+		tx.Rollback()
+		utils.JSON500(c, "Internal server error")
+		return
+	}
+
+	// Handle email verification if email is being updated
+	if req.Email != nil && (user.Email == nil || *req.Email != *user.Email) {
+		// Check if verification record already exists for this email
+		existingVerification, err := ctrl.Repository.GetUserVerificationByMethodAndValue(userID, "email", *req.Email)
+		if err != nil {
+			tx.Rollback()
+			utils.JSON500(c, "Error checking email verification")
+			return
+		}
+
+		if existingVerification == nil {
+			// Create new email verification record
+			emailVerification := entity.UserVerification{
+				ID:         uuid.New(),
+				UserID:     userID,
+				Method:     "email",
+				Value:      *req.Email,
+				IsVerified: false,
+			}
+			if err := ctrl.Repository.CreateUserVerificationWithTransaction(tx, &emailVerification); err != nil {
+				tx.Rollback()
+				utils.JSON500(c, "Error creating email verification")
+				return
+			}
+		}
+	}
+
+	// Handle phone verification if phone is being updated
+	if req.Phone != nil && (user.Phone == nil || *req.Phone != *user.Phone) {
+		// Check if verification record already exists for this phone
+		existingVerification, err := ctrl.Repository.GetUserVerificationByMethodAndValue(userID, "phone", *req.Phone)
+		if err != nil {
+			tx.Rollback()
+			utils.JSON500(c, "Error checking phone verification")
+			return
+		}
+
+		if existingVerification == nil {
+			// Create new phone verification record
+			phoneVerification := entity.UserVerification{
+				ID:         uuid.New(),
+				UserID:     userID,
+				Method:     "phone",
+				Value:      *req.Phone,
+				IsVerified: false,
+			}
+			if err := ctrl.Repository.CreateUserVerificationWithTransaction(tx, &phoneVerification); err != nil {
+				tx.Rollback()
+				utils.JSON500(c, "Error creating phone verification")
+				return
+			}
+		}
+	}
+
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
 		utils.JSON500(c, "Internal server error")
 		return
 	}
