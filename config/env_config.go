@@ -87,7 +87,7 @@ func LoadEnvConfig() *EnvConfig {
 	// Grafana/OpenTelemetry
 	config.Grafana.OTLPEndpoint = os.Getenv("GRAFANA_OTLP_ENDPOINT")
 	if config.Grafana.OTLPEndpoint == "" {
-		config.Grafana.OTLPEndpoint = "https://grafana.gauas.online:4318"
+		config.Grafana.OTLPEndpoint = "https://grafana.gauas.online"
 	}
 	config.Grafana.ServiceName = os.Getenv("SERVICE_NAME")
 	if config.Grafana.ServiceName == "" {
