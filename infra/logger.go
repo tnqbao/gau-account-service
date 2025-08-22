@@ -8,15 +8,13 @@ import (
 
 	"github.com/tnqbao/gau-account-service/config"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 type LoggerClient struct {
@@ -86,19 +84,11 @@ func InitLoggerClient(cfg *config.EnvConfig) *LoggerClient {
 }
 
 func initTracer(cfg *config.EnvConfig) (func(context.Context) error, error) {
-	// Create gRPC connection to Grafana OTLP endpoint
-	conn, err := grpc.NewClient(
-		cfg.Grafana.OTLPEndpoint,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
-	if err != nil {
-		return nil, err
-	}
-
 	// Create OTLP trace exporter
-	traceExporter, err := otlptracegrpc.New(
+	traceExporter, err := otlptracehttp.New(
 		context.Background(),
-		otlptracegrpc.WithGRPCConn(conn),
+		otlptracehttp.WithEndpoint(cfg.Grafana.OTLPEndpoint),
+		otlptracehttp.WithInsecure(),
 	)
 	if err != nil {
 		return nil, err
