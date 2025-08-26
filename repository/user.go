@@ -225,7 +225,7 @@ func (r *Repository) UpdateUserVerification(verification *entity.UserVerificatio
 	return nil
 }
 
-// CreateUserMFA creates a new user MFA record
+// CreateUserMFA creates a new MFA record
 func (r *Repository) CreateUserMFA(mfa *entity.UserMFA) error {
 	if err := r.Db.Create(mfa).Error; err != nil {
 		return fmt.Errorf("error creating user MFA: %v", err)
@@ -242,7 +242,16 @@ func (r *Repository) GetUserMFAs(userID uuid.UUID) ([]entity.UserMFA, error) {
 	return mfas, nil
 }
 
-// UpdateUserMFA updates a user MFA record
+// GetUserMFAByType gets a specific MFA record by type
+func (r *Repository) GetUserMFAByType(userID uuid.UUID, mfaType string) (*entity.UserMFA, error) {
+	var mfa entity.UserMFA
+	if err := r.Db.Where("user_id = ? AND type = ?", userID, mfaType).First(&mfa).Error; err != nil {
+		return nil, err
+	}
+	return &mfa, nil
+}
+
+// UpdateUserMFA updates an MFA record
 func (r *Repository) UpdateUserMFA(mfa *entity.UserMFA) error {
 	if err := r.Db.Save(mfa).Error; err != nil {
 		return fmt.Errorf("error updating user MFA: %v", err)

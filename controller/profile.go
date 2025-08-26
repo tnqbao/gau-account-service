@@ -14,8 +14,13 @@ import (
 
 // GetAccountBasicInfo returns only basic account information (no security data)
 func (ctrl *Controller) GetAccountBasicInfo(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Basic] Get basic account info request received")
+
 	userId := c.MustGet("user_id")
 	if userId == nil {
+		ctrl.Provider.LoggerProvider.WarningWithContextf(ctx, "[Profile Basic] User ID is missing from context")
 		utils.JSON400(c, "User ID is required")
 		return
 	}
@@ -25,6 +30,7 @@ func (ctrl *Controller) GetAccountBasicInfo(c *gin.Context) {
 	case string:
 		parsed, err := uuid.Parse(v)
 		if err != nil {
+			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Basic] Invalid User ID format: %s", v)
 			utils.JSON400(c, "Invalid User ID format")
 			return
 		}
@@ -32,15 +38,20 @@ func (ctrl *Controller) GetAccountBasicInfo(c *gin.Context) {
 	case uuid.UUID:
 		uuidUserId = v
 	default:
+		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, nil, "[Profile Basic] Invalid User ID type: %T", v)
 		utils.JSON400(c, "Invalid User ID type")
 		return
 	}
 
+	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Basic] Fetching basic info for user: %s", uuidUserId.String())
+
 	userInfo, err := ctrl.Repository.GetUserById(uuidUserId)
 	if err != nil {
 		if err.Error() == "record not found" {
+			ctrl.Provider.LoggerProvider.WarningWithContextf(ctx, "[Profile Basic] User not found: %s", uuidUserId.String())
 			utils.JSON404(c, "User not found")
 		} else {
+			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Basic] Database error while fetching user: %s", uuidUserId.String())
 			utils.JSON500(c, "Internal server error")
 		}
 		return
@@ -59,6 +70,8 @@ func (ctrl *Controller) GetAccountBasicInfo(c *gin.Context) {
 		Permission:  userInfo.Permission,
 		DateOfBirth: userInfo.DateOfBirth,
 	}
+
+	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Basic] Successfully retrieved basic info for user: %s", uuidUserId.String())
 	utils.JSON200(c, gin.H{
 		"user_info": response,
 	})
@@ -66,8 +79,13 @@ func (ctrl *Controller) GetAccountBasicInfo(c *gin.Context) {
 
 // GetAccountSecurityInfo returns only verification and MFA information
 func (ctrl *Controller) GetAccountSecurityInfo(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Security] Get security info request received")
+
 	userId := c.MustGet("user_id")
 	if userId == nil {
+		ctrl.Provider.LoggerProvider.WarningWithContextf(ctx, "[Profile Security] User ID is missing from context")
 		utils.JSON400(c, "User ID is required")
 		return
 	}
@@ -77,6 +95,7 @@ func (ctrl *Controller) GetAccountSecurityInfo(c *gin.Context) {
 	case string:
 		parsed, err := uuid.Parse(v)
 		if err != nil {
+			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Security] Invalid User ID format: %s", v)
 			utils.JSON400(c, "Invalid User ID format")
 			return
 		}
@@ -84,13 +103,17 @@ func (ctrl *Controller) GetAccountSecurityInfo(c *gin.Context) {
 	case uuid.UUID:
 		uuidUserId = v
 	default:
+		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, nil, "[Profile Security] Invalid User ID type: %T", v)
 		utils.JSON400(c, "Invalid User ID type")
 		return
 	}
 
+	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Security] Fetching security info for user: %s", uuidUserId.String())
+
 	// Get user verifications
 	verifications, err := ctrl.Repository.GetUserVerifications(uuidUserId)
 	if err != nil {
+		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Security] Error fetching user verifications for user: %s", uuidUserId.String())
 		utils.JSON500(c, "Error fetching user verifications")
 		return
 	}
@@ -98,6 +121,7 @@ func (ctrl *Controller) GetAccountSecurityInfo(c *gin.Context) {
 	// Get user MFAs
 	mfas, err := ctrl.Repository.GetUserMFAs(uuidUserId)
 	if err != nil {
+		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Security] Error fetching user MFAs for user: %s", uuidUserId.String())
 		utils.JSON500(c, "Error fetching user MFAs")
 		return
 	}
@@ -136,6 +160,8 @@ func (ctrl *Controller) GetAccountSecurityInfo(c *gin.Context) {
 		}
 		mfaInfos = append(mfaInfos, mfaInfo)
 	}
+
+	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Security] Successfully retrieved security info for user: %s - Verifications: %d, MFAs: %d", uuidUserId.String(), len(verificationInfos), len(mfaInfos))
 
 	response := UserSecurityInfoResponse{
 		UserId:          uuidUserId,
@@ -151,8 +177,13 @@ func (ctrl *Controller) GetAccountSecurityInfo(c *gin.Context) {
 
 // GetAccountCompleteInfo returns all account information (basic + security)
 func (ctrl *Controller) GetAccountCompleteInfo(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Complete] Get complete account info request received")
+
 	userId := c.MustGet("user_id")
 	if userId == nil {
+		ctrl.Provider.LoggerProvider.WarningWithContextf(ctx, "[Profile Complete] User ID is missing from context")
 		utils.JSON400(c, "User ID is required")
 		return
 	}
@@ -162,6 +193,7 @@ func (ctrl *Controller) GetAccountCompleteInfo(c *gin.Context) {
 	case string:
 		parsed, err := uuid.Parse(v)
 		if err != nil {
+			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Complete] Invalid User ID format: %s", v)
 			utils.JSON400(c, "Invalid User ID format")
 			return
 		}
@@ -169,15 +201,20 @@ func (ctrl *Controller) GetAccountCompleteInfo(c *gin.Context) {
 	case uuid.UUID:
 		uuidUserId = v
 	default:
+		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, nil, "[Profile Complete] Invalid User ID type: %T", v)
 		utils.JSON400(c, "Invalid User ID type")
 		return
 	}
 
+	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Complete] Fetching complete info for user: %s", uuidUserId.String())
+
 	userInfo, err := ctrl.Repository.GetUserById(uuidUserId)
 	if err != nil {
 		if err.Error() == "record not found" {
+			ctrl.Provider.LoggerProvider.WarningWithContextf(ctx, "[Profile Complete] User not found: %s", uuidUserId.String())
 			utils.JSON404(c, "User not found")
 		} else {
+			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Complete] Database error while fetching user: %s", uuidUserId.String())
 			utils.JSON500(c, "Internal server error")
 		}
 		return
@@ -186,6 +223,7 @@ func (ctrl *Controller) GetAccountCompleteInfo(c *gin.Context) {
 	// Get user verifications
 	verifications, err := ctrl.Repository.GetUserVerifications(uuidUserId)
 	if err != nil {
+		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Complete] Error fetching user verifications for user: %s", uuidUserId.String())
 		utils.JSON500(c, "Error fetching user verifications")
 		return
 	}
@@ -193,6 +231,7 @@ func (ctrl *Controller) GetAccountCompleteInfo(c *gin.Context) {
 	// Get user MFAs
 	mfas, err := ctrl.Repository.GetUserMFAs(uuidUserId)
 	if err != nil {
+		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Complete] Error fetching user MFAs for user: %s", uuidUserId.String())
 		utils.JSON500(c, "Error fetching user MFAs")
 		return
 	}
@@ -211,7 +250,6 @@ func (ctrl *Controller) GetAccountCompleteInfo(c *gin.Context) {
 		}
 		verificationInfos = append(verificationInfos, verificationInfo)
 
-		// Set backward compatibility flags
 		if verification.Method == "email" && verification.IsVerified {
 			isEmailVerified = true
 		}
@@ -231,6 +269,8 @@ func (ctrl *Controller) GetAccountCompleteInfo(c *gin.Context) {
 		}
 		mfaInfos = append(mfaInfos, mfaInfo)
 	}
+
+	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Complete] Successfully retrieved complete info for user: %s - Verifications: %d, MFAs: %d", uuidUserId.String(), len(verificationInfos), len(mfaInfos))
 
 	response := UserCompleteInfoResponse{
 		UserId:          userInfo.UserID,
@@ -259,8 +299,13 @@ func (ctrl *Controller) GetAccountInfo(c *gin.Context) {
 }
 
 func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Update] Update account info request received")
+
 	userIdRaw := c.MustGet("user_id")
 	if userIdRaw == nil {
+		ctrl.Provider.LoggerProvider.WarningWithContextf(ctx, "[Profile Update] User ID is missing from context")
 		utils.JSON400(c, "User ID is required")
 		return
 	}
@@ -270,6 +315,7 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 	case string:
 		id, err := uuid.Parse(v)
 		if err != nil {
+			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Update] Invalid User ID format: %s", v)
 			utils.JSON400(c, "Invalid User ID format")
 			return
 		}
@@ -277,15 +323,20 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 	case uuid.UUID:
 		userID = v
 	default:
+		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, nil, "[Profile Update] Invalid User ID type: %T", v)
 		utils.JSON400(c, "Invalid User ID type")
 		return
 	}
 
+	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Update] Starting account update for user: %s", userID.String())
+
 	user, err := ctrl.Repository.GetUserById(userID)
 	if err != nil {
 		if err.Error() == "record not found" {
+			ctrl.Provider.LoggerProvider.WarningWithContextf(ctx, "[Profile Update] User not found: %s", userID.String())
 			utils.JSON404(c, "User not found")
 		} else {
+			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Update] Database error while fetching user: %s", userID.String())
 			utils.JSON500(c, "Internal server error")
 		}
 		return
@@ -293,17 +344,20 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 
 	var req UserInformationUpdateReq
 	if err := c.ShouldBindJSON(&req); err != nil {
+		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Update] Failed to bind JSON request for user: %s", userID.String())
 		utils.JSON400(c, "Invalid request format: "+err.Error())
 		return
 	}
 
 	// Validate email and phone format if provided
 	if req.Email != nil && !ctrl.IsValidEmail(*req.Email) {
+		ctrl.Provider.LoggerProvider.WarningWithContextf(ctx, "[Profile Update] Invalid email format provided for user: %s", userID.String())
 		utils.JSON400(c, "Invalid email format")
 		return
 	}
 
 	if req.Phone != nil && !ctrl.IsValidPhone(*req.Phone) {
+		ctrl.Provider.LoggerProvider.WarningWithContextf(ctx, "[Profile Update] Invalid phone format provided for user: %s", userID.String())
 		utils.JSON400(c, "Invalid phone format")
 		return
 	}
@@ -311,14 +365,18 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 	// Start a database transaction
 	tx := ctrl.Repository.Db.Begin()
 	if tx.Error != nil {
+		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, tx.Error, "[Profile Update] Failed to start transaction for user: %s", userID.String())
 		utils.JSON500(c, "Internal server error")
 		return
 	}
 	defer func() {
 		if r := recover(); r != nil {
+			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, nil, "[Profile Update] Transaction panicked for user: %s - %v", userID.String(), r)
 			tx.Rollback()
 		}
 	}()
+
+	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Update] Updating user information for user: %s", userID.String())
 
 	updateData := &entity.User{
 		UserID:      user.UserID,
@@ -338,16 +396,20 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 	updatedUser, err := ctrl.Repository.UpdateUserWithTransaction(tx, updateData)
 	if err != nil {
 		tx.Rollback()
+		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Update] Failed to update user information for user: %s", userID.String())
 		utils.JSON500(c, "Internal server error")
 		return
 	}
 
 	// Handle email verification if email is being updated
 	if req.Email != nil && (user.Email == nil || *req.Email != *user.Email) {
+		ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Update] Email change detected for user: %s - creating verification record", userID.String())
+
 		// Check if verification record already exists for this email
 		existingVerification, err := ctrl.Repository.GetUserVerificationByMethodAndValue(userID, "email", *req.Email)
 		if err != nil {
 			tx.Rollback()
+			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Update] Error checking email verification for user: %s", userID.String())
 			utils.JSON500(c, "Error checking email verification")
 			return
 		}
@@ -363,18 +425,25 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 			}
 			if err := ctrl.Repository.CreateUserVerificationWithTransaction(tx, &emailVerification); err != nil {
 				tx.Rollback()
+				ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Update] Error creating email verification for user: %s", userID.String())
 				utils.JSON500(c, "Error creating email verification")
 				return
 			}
+			ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Update] Email verification record created for user: %s", userID.String())
+		} else {
+			ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Update] Email verification record already exists for user: %s", userID.String())
 		}
 	}
 
 	// Handle phone verification if phone is being updated
 	if req.Phone != nil && (user.Phone == nil || *req.Phone != *user.Phone) {
+		ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Update] Phone change detected for user: %s - creating verification record", userID.String())
+
 		// Check if verification record already exists for this phone
 		existingVerification, err := ctrl.Repository.GetUserVerificationByMethodAndValue(userID, "phone", *req.Phone)
 		if err != nil {
 			tx.Rollback()
+			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Update] Error checking phone verification for user: %s", userID.String())
 			utils.JSON500(c, "Error checking phone verification")
 			return
 		}
@@ -390,17 +459,24 @@ func (ctrl *Controller) UpdateAccountInfo(c *gin.Context) {
 			}
 			if err := ctrl.Repository.CreateUserVerificationWithTransaction(tx, &phoneVerification); err != nil {
 				tx.Rollback()
+				ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Update] Error creating phone verification for user: %s", userID.String())
 				utils.JSON500(c, "Error creating phone verification")
 				return
 			}
+			ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Update] Phone verification record created for user: %s", userID.String())
+		} else {
+			ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Update] Phone verification record already exists for user: %s", userID.String())
 		}
 	}
 
-	// Commit the transaction
+	// Commit transaction
 	if err := tx.Commit().Error; err != nil {
+		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Update] Failed to commit transaction for user: %s", userID.String())
 		utils.JSON500(c, "Internal server error")
 		return
 	}
+
+	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Update] Successfully updated account info for user: %s", userID.String())
 
 	utils.JSON200(c, gin.H{
 		"message":   "User information updated successfully",
@@ -478,6 +554,7 @@ func (ctrl *Controller) UpdateAccountBasicInfo(c *gin.Context) {
 
 // UpdateAccountSecurityInfo updates only security-related information (email/phone)
 func (ctrl *Controller) UpdateAccountSecurityInfo(c *gin.Context) {
+	ctx := c.Request.Context()
 	userIdRaw := c.MustGet("user_id")
 	if userIdRaw == nil {
 		utils.JSON400(c, "User ID is required")
@@ -564,10 +641,13 @@ func (ctrl *Controller) UpdateAccountSecurityInfo(c *gin.Context) {
 
 	// Handle email verification if email is being updated
 	if req.Email != nil && (user.Email == nil || *req.Email != *user.Email) {
+		ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Update] Email change detected for user: %s - creating verification record", userID.String())
+
 		// Check if verification record already exists for this email
 		existingVerification, err := ctrl.Repository.GetUserVerificationByMethodAndValue(userID, "email", *req.Email)
 		if err != nil {
 			tx.Rollback()
+			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Update] Error checking email verification for user: %s", userID.String())
 			utils.JSON500(c, "Error checking email verification")
 			return
 		}
@@ -583,18 +663,25 @@ func (ctrl *Controller) UpdateAccountSecurityInfo(c *gin.Context) {
 			}
 			if err := ctrl.Repository.CreateUserVerificationWithTransaction(tx, &emailVerification); err != nil {
 				tx.Rollback()
+				ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Update] Error creating email verification for user: %s", userID.String())
 				utils.JSON500(c, "Error creating email verification")
 				return
 			}
+			ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Update] Email verification record created for user: %s", userID.String())
+		} else {
+			ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Update] Email verification record already exists for user: %s", userID.String())
 		}
 	}
 
 	// Handle phone verification if phone is being updated
 	if req.Phone != nil && (user.Phone == nil || *req.Phone != *user.Phone) {
+		ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Update] Phone change detected for user: %s - creating verification record", userID.String())
+
 		// Check if verification record already exists for this phone
 		existingVerification, err := ctrl.Repository.GetUserVerificationByMethodAndValue(userID, "phone", *req.Phone)
 		if err != nil {
 			tx.Rollback()
+			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Update] Error checking phone verification for user: %s", userID.String())
 			utils.JSON500(c, "Error checking phone verification")
 			return
 		}
@@ -610,9 +697,13 @@ func (ctrl *Controller) UpdateAccountSecurityInfo(c *gin.Context) {
 			}
 			if err := ctrl.Repository.CreateUserVerificationWithTransaction(tx, &phoneVerification); err != nil {
 				tx.Rollback()
+				ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Profile Update] Error creating phone verification for user: %s", userID.String())
 				utils.JSON500(c, "Error creating phone verification")
 				return
 			}
+			ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Update] Phone verification record created for user: %s", userID.String())
+		} else {
+			ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Profile Update] Phone verification record already exists for user: %s", userID.String())
 		}
 	}
 
@@ -805,10 +896,13 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 
 	// Change from "avatar_image" to "file" to match the upload service expectation
 	file, err := c.FormFile("file")
+	err = c.Request.ParseMultipartForm(10 << 20) // 10 MB limit
 	if err != nil {
-		utils.JSON400(c, "File not found or invalid")
+		utils.JSON400(c, "Invalid form data")
 		return
 	}
+
+	file = c.Request.MultipartForm.File["file"][0]
 
 	if file.Size > 50*1024*1024 {
 		utils.JSON400(c, "File size exceeds the limit of 50MB")
