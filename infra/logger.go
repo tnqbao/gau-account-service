@@ -115,10 +115,9 @@ func setupOTelSDK(ctx context.Context, cfg *config.EnvConfig) (shutdown func(con
 	}
 
 	// Thiết lập trace exporter và tracer provider
-	traceEndpoint := cfg.Grafana.OTLPEndpoint + "/v1/traces"
 	traceExporter, err := otlptrace.New(ctx, otlptracehttp.NewClient(
-		otlptracehttp.WithEndpoint(traceEndpoint),
-		otlptracehttp.WithInsecure(),
+		otlptracehttp.WithEndpoint(cfg.Grafana.OTLPEndpoint),
+		// Remove WithInsecure() for HTTPS
 	))
 	if err != nil {
 		handleErr(err)
@@ -134,10 +133,10 @@ func setupOTelSDK(ctx context.Context, cfg *config.EnvConfig) (shutdown func(con
 	otel.SetTracerProvider(tracerProvider)
 
 	// Thiết lập metric exporter và meter provider
-	metricEndpoint := cfg.Grafana.OTLPEndpoint + "/v1/metrics"
 	metricExporter, err := otlpmetrichttp.New(ctx,
-		otlpmetrichttp.WithEndpoint(metricEndpoint),
-		otlpmetrichttp.WithInsecure())
+		otlpmetrichttp.WithEndpoint(cfg.Grafana.OTLPEndpoint),
+		// Remove WithInsecure() for HTTPS
+	)
 	if err != nil {
 		handleErr(err)
 		return nil, err
@@ -158,10 +157,10 @@ func setupOTelSDK(ctx context.Context, cfg *config.EnvConfig) (shutdown func(con
 	otel.SetMeterProvider(meterProvider)
 
 	// Thiết lập log exporter và logger provider
-	logEndpoint := cfg.Grafana.OTLPEndpoint + "/v1/logs"
 	logExporter, err := otlploghttp.New(ctx,
-		otlploghttp.WithEndpoint(logEndpoint),
-		otlploghttp.WithInsecure())
+		otlploghttp.WithEndpoint(cfg.Grafana.OTLPEndpoint),
+		// Remove WithInsecure() for HTTPS
+	)
 	if err != nil {
 		handleErr(err)
 		return nil, err
