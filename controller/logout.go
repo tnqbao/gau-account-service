@@ -7,6 +7,7 @@ import (
 
 func (ctrl *Controller) Logout(c *gin.Context) {
 	ctx := c.Request.Context()
+
 	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Logout] Received logout request")
 
 	refreshToken := c.GetHeader("X-Refresh-Token")

@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 type EnvConfig struct {
@@ -37,6 +38,11 @@ type EnvConfig struct {
 		ServiceName  string
 	}
 	PrivateKey string
+
+	Environment struct {
+		Mode  string
+		Group string
+	}
 }
 
 func LoadEnvConfig() *EnvConfig {
@@ -85,13 +91,31 @@ func LoadEnvConfig() *EnvConfig {
 	}
 
 	// Grafana/OpenTelemetry
-	config.Grafana.OTLPEndpoint = os.Getenv("GRAFANA_OTLP_ENDPOINT")
-	if config.Grafana.OTLPEndpoint == "" {
-		config.Grafana.OTLPEndpoint = "grafana.gauas.online:4317"
+	grafanaEndpoint := os.Getenv("GRAFANA_OTLP_ENDPOINT")
+	if grafanaEndpoint == "" {
+		grafanaEndpoint = "https://grafana.gauas.online"
+	}
+	// Remove protocol for OpenTelemetry client to avoid duplicate protocols
+	if strings.HasPrefix(grafanaEndpoint, "https://") {
+		config.Grafana.OTLPEndpoint = strings.TrimPrefix(grafanaEndpoint, "https://")
+	} else if strings.HasPrefix(grafanaEndpoint, "http://") {
+		config.Grafana.OTLPEndpoint = strings.TrimPrefix(grafanaEndpoint, "http://")
+	} else {
+		config.Grafana.OTLPEndpoint = grafanaEndpoint
 	}
 	config.Grafana.ServiceName = os.Getenv("SERVICE_NAME")
 	if config.Grafana.ServiceName == "" {
 		config.Grafana.ServiceName = "gau-account-service"
+	}
+
+	config.Environment.Mode = os.Getenv("DEPLOY_ENV")
+	if config.Environment.Mode == "" {
+		config.Environment.Mode = "development"
+	}
+
+	config.Environment.Group = os.Getenv("GROUP_NAME")
+	if config.Environment.Group == "" {
+		config.Environment.Group = "local"
 	}
 
 	return &config

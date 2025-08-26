@@ -9,6 +9,7 @@ import (
 
 func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 	ctx := c.Request.Context()
+
 	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Register] Registration request received")
 
 	var req UserBasicRegistryReq
@@ -122,7 +123,7 @@ func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 
 	// Commit the transaction
 	if err := tx.Commit().Error; err != nil {
-		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Register] Failed to commit transaction for user: %s", user.UserID.String())
+		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Register] Failed to commit registration transaction for user: %s", user.UserID.String())
 		utils.JSON500(c, "Internal server error")
 		return
 	}
@@ -130,7 +131,7 @@ func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Register] Registration completed successfully for user: %s", user.UserID.String())
 
 	utils.JSON200(c, gin.H{
-		"message": "User successfully created",
+		"message": "Registration successful",
 		"user_id": user.UserID,
 	})
 }
