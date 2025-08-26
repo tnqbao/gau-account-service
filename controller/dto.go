@@ -134,3 +134,12 @@ type UserCompleteInfoUpdateReq struct {
 type ClientRequestGoogleAuthentication struct {
 	Token string `json:"token" binding:"required"`
 }
+
+type TOTPEnableRequest struct {
+	OTPCode string `json:"otp_code" binding:"required"`
+}
+
+type TOTPVerifyRequest struct {
+	OTPCode  string `json:"otp_code" binding:"required"`
+	DeviceID string `json:"device_id,omitempty"`
+}
