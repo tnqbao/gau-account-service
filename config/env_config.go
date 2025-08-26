@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 type EnvConfig struct {
@@ -85,9 +86,17 @@ func LoadEnvConfig() *EnvConfig {
 	}
 
 	// Grafana/OpenTelemetry
-	config.Grafana.OTLPEndpoint = os.Getenv("GRAFANA_OTLP_ENDPOINT")
-	if config.Grafana.OTLPEndpoint == "" {
-		config.Grafana.OTLPEndpoint = "https://grafana.gauas.online"
+	grafanaEndpoint := os.Getenv("GRAFANA_OTLP_ENDPOINT")
+	if grafanaEndpoint == "" {
+		grafanaEndpoint = "https://grafana.gauas.online"
+	}
+	// Remove protocol for OpenTelemetry client to avoid duplicate protocols
+	if strings.HasPrefix(grafanaEndpoint, "https://") {
+		config.Grafana.OTLPEndpoint = strings.TrimPrefix(grafanaEndpoint, "https://")
+	} else if strings.HasPrefix(grafanaEndpoint, "http://") {
+		config.Grafana.OTLPEndpoint = strings.TrimPrefix(grafanaEndpoint, "http://")
+	} else {
+		config.Grafana.OTLPEndpoint = grafanaEndpoint
 	}
 	config.Grafana.ServiceName = os.Getenv("SERVICE_NAME")
 	if config.Grafana.ServiceName == "" {
