@@ -3,75 +3,78 @@ package infra
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
+	"os"
 	"time"
 
 	"github.com/tnqbao/gau-account-service/config"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
-	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
-	"go.opentelemetry.io/otel/trace"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
+const schemaName = "gau-account-service"
+
+// LoggerClient tương thích với code cũ
 type LoggerClient struct {
-	Logger   *zap.Logger
-	Sugar    *zap.SugaredLogger
+	Logger   *slog.Logger
 	shutdown func(context.Context) error
 }
 
 var loggerInstance *LoggerClient
 
+// SetupOTelLogSDK khởi tạo structured logger với slog
+func SetupOTelLogSDK(ctx context.Context, cfg *config.EnvConfig) (shutdown func(context.Context) error, err error) {
+	// Tạo structured logger với slog
+	opts := &slog.HandlerOptions{
+		Level:     slog.LevelInfo,
+		AddSource: true,
+	}
+
+	// Tạo JSON handler để xuất structured logs
+	handler := slog.NewJSONHandler(os.Stdout, opts)
+
+	// Wrap với context để thêm service metadata
+	logger := slog.New(handler).With(
+		"service", cfg.Grafana.ServiceName,
+		"schema", schemaName,
+	)
+
+	// Đặt làm default logger
+	slog.SetDefault(logger)
+
+	// Return empty shutdown function
+	shutdown = func(ctx context.Context) error {
+		return nil
+	}
+
+	return shutdown, nil
+}
+
+// InitLoggerClient khởi tạo logger client (tương thích với code cũ)
 func InitLoggerClient(cfg *config.EnvConfig) *LoggerClient {
 	if loggerInstance != nil {
 		return loggerInstance
 	}
 
-	// Initialize OpenTelemetry tracer
-	shutdown, err := initTracer(cfg)
+	// Initialize structured logging
+	shutdown, err := SetupOTelLogSDK(context.Background(), cfg)
 	if err != nil {
-		log.Printf("Failed to initialize OpenTelemetry tracer: %v", err)
+		fmt.Printf("Failed to initialize structured logging: %v", err)
+		// Fallback to basic slog if setup fails
+		logger := slog.Default()
+		loggerInstance = &LoggerClient{
+			Logger:   logger,
+			shutdown: nil,
+		}
+		return loggerInstance
 	}
 
-	// Create custom logger configuration
-	zapConfig := zap.NewProductionConfig()
-	zapConfig.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
-	zapConfig.OutputPaths = []string{"stdout"}
-	zapConfig.ErrorOutputPaths = []string{"stderr"}
-
-	// Add service information to all logs
-	zapConfig.InitialFields = map[string]interface{}{
-		"service": cfg.Grafana.ServiceName,
-		"version": "1.0.0",
-	}
-
-	// Customize encoder config for better structured logging
-	zapConfig.EncoderConfig = zapcore.EncoderConfig{
-		TimeKey:        "timestamp",
-		LevelKey:       "level",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		FunctionKey:    zapcore.OmitKey,
-		MessageKey:     "message",
-		StacktraceKey:  "stacktrace",
-		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.LowercaseLevelEncoder,
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
-		EncodeDuration: zapcore.SecondsDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
-	}
-
-	logger, err := zapConfig.Build()
-	if err != nil {
-		log.Fatalf("Failed to initialize logger: %v", err)
-	}
+	// Create structured logger với service metadata
+	logger := slog.Default().With(
+		"service", cfg.Grafana.ServiceName,
+		"endpoint", cfg.Grafana.OTLPEndpoint,
+	)
 
 	loggerInstance = &LoggerClient{
 		Logger:   logger,
-		Sugar:    logger.Sugar(),
 		shutdown: shutdown,
 	}
 
@@ -83,41 +86,6 @@ func InitLoggerClient(cfg *config.EnvConfig) *LoggerClient {
 	return loggerInstance
 }
 
-func initTracer(cfg *config.EnvConfig) (func(context.Context) error, error) {
-	// Create OTLP trace exporter
-	traceExporter, err := otlptracehttp.New(
-		context.Background(),
-		otlptracehttp.WithEndpoint(cfg.Grafana.OTLPEndpoint),
-		otlptracehttp.WithInsecure(),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create resource with service information
-	res, err := resource.New(
-		context.Background(),
-		resource.WithAttributes(
-			semconv.ServiceName(cfg.Grafana.ServiceName),
-			semconv.ServiceVersion("1.0.0"),
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create trace provider
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(traceExporter),
-		sdktrace.WithResource(res),
-	)
-
-	// Set global tracer provider
-	otel.SetTracerProvider(tp)
-
-	return tp.Shutdown, nil
-}
-
 func GetLogger() *LoggerClient {
 	if loggerInstance == nil {
 		panic("Logger not initialized. Call InitLoggerClient() first.")
@@ -126,9 +94,6 @@ func GetLogger() *LoggerClient {
 }
 
 func (l *LoggerClient) Shutdown(ctx context.Context) error {
-	if err := l.Logger.Sync(); err != nil {
-		log.Printf("Failed to sync logger: %v", err)
-	}
 	if l.shutdown != nil {
 		return l.shutdown(ctx)
 	}
@@ -137,130 +102,102 @@ func (l *LoggerClient) Shutdown(ctx context.Context) error {
 
 // Context-aware logging methods
 func (l *LoggerClient) InfoWithContext(ctx context.Context, msg string, fields map[string]interface{}) {
-	zapFields := l.extractContextFields(ctx, fields)
-	l.Logger.Info(msg, zapFields...)
+	attrs := l.convertToSlogAny(fields)
+	l.Logger.InfoContext(ctx, msg, attrs...)
 }
 
 func (l *LoggerClient) ErrorWithContext(ctx context.Context, msg string, err error, fields map[string]interface{}) {
-	zapFields := l.extractContextFields(ctx, fields)
+	attrs := l.convertToSlogAny(fields)
 	if err != nil {
-		zapFields = append(zapFields, zap.Error(err))
+		attrs = append(attrs, slog.String("error", err.Error()))
 	}
-	l.Logger.Error(msg, zapFields...)
+	l.Logger.ErrorContext(ctx, msg, attrs...)
 }
 
 func (l *LoggerClient) WarningWithContext(ctx context.Context, msg string, fields map[string]interface{}) {
-	zapFields := l.extractContextFields(ctx, fields)
-	l.Logger.Warn(msg, zapFields...)
+	attrs := l.convertToSlogAny(fields)
+	l.Logger.WarnContext(ctx, msg, attrs...)
 }
 
 func (l *LoggerClient) DebugWithContext(ctx context.Context, msg string, fields map[string]interface{}) {
-	zapFields := l.extractContextFields(ctx, fields)
-	l.Logger.Debug(msg, zapFields...)
+	attrs := l.convertToSlogAny(fields)
+	l.Logger.DebugContext(ctx, msg, attrs...)
 }
 
 func (l *LoggerClient) FatalWithContext(ctx context.Context, msg string, err error, fields map[string]interface{}) {
-	zapFields := l.extractContextFields(ctx, fields)
+	attrs := l.convertToSlogAny(fields)
 	if err != nil {
-		zapFields = append(zapFields, zap.Error(err))
+		attrs = append(attrs, slog.String("error", err.Error()))
 	}
-	l.Logger.Fatal(msg, zapFields...)
+	l.Logger.ErrorContext(ctx, msg, attrs...)
+	panic(msg) // Fatal should terminate the program
 }
 
 // printf-style formatting methods
 func (l *LoggerClient) InfoWithContextf(ctx context.Context, format string, args ...interface{}) {
-	zapFields := l.extractContextFields(ctx, nil)
 	msg := fmt.Sprintf(format, args...)
-	l.Logger.Info(msg, zapFields...)
+	l.Logger.InfoContext(ctx, msg)
 }
 
 func (l *LoggerClient) ErrorWithContextf(ctx context.Context, err error, format string, args ...interface{}) {
-	zapFields := l.extractContextFields(ctx, nil)
-	if err != nil {
-		zapFields = append(zapFields, zap.Error(err))
-	}
 	msg := fmt.Sprintf(format, args...)
-	l.Logger.Error(msg, zapFields...)
+	if err != nil {
+		l.Logger.ErrorContext(ctx, msg, slog.String("error", err.Error()))
+	} else {
+		l.Logger.ErrorContext(ctx, msg)
+	}
 }
 
 func (l *LoggerClient) WarningWithContextf(ctx context.Context, format string, args ...interface{}) {
-	zapFields := l.extractContextFields(ctx, nil)
 	msg := fmt.Sprintf(format, args...)
-	l.Logger.Warn(msg, zapFields...)
+	l.Logger.WarnContext(ctx, msg)
 }
 
 func (l *LoggerClient) DebugWithContextf(ctx context.Context, format string, args ...interface{}) {
-	zapFields := l.extractContextFields(ctx, nil)
 	msg := fmt.Sprintf(format, args...)
-	l.Logger.Debug(msg, zapFields...)
+	l.Logger.DebugContext(ctx, msg)
 }
 
-// Helper method to extract trace information from context
-func (l *LoggerClient) extractContextFields(ctx context.Context, fields map[string]interface{}) []zap.Field {
-	zapFields := make([]zap.Field, 0, len(fields)+3)
-
-	// Add trace information from OpenTelemetry context
-	span := trace.SpanFromContext(ctx)
-	if span.SpanContext().IsValid() {
-		zapFields = append(zapFields,
-			zap.String("trace_id", span.SpanContext().TraceID().String()),
-			zap.String("span_id", span.SpanContext().SpanID().String()),
-		)
-	}
-
-	// Add custom fields
+// Helper method to convert map to slog any attributes (compatible with slog API)
+func (l *LoggerClient) convertToSlogAny(fields map[string]interface{}) []any {
+	attrs := make([]any, 0, len(fields)*2)
 	for k, v := range fields {
-		zapFields = append(zapFields, zap.Any(k, v))
+		attrs = append(attrs, k, v)
 	}
-
-	return zapFields
+	return attrs
 }
 
 // Core logging methods
 func (l *LoggerClient) Info(msg string, fields map[string]interface{}) {
-	zapFields := make([]zap.Field, 0, len(fields))
-	for k, v := range fields {
-		zapFields = append(zapFields, zap.Any(k, v))
-	}
-	l.Logger.Info(msg, zapFields...)
+	attrs := l.convertToSlogAny(fields)
+	l.Logger.Info(msg, attrs...)
 }
 
 func (l *LoggerClient) Error(msg string, err error, fields map[string]interface{}) {
-	zapFields := make([]zap.Field, 0, len(fields)+1)
+	attrs := l.convertToSlogAny(fields)
 	if err != nil {
-		zapFields = append(zapFields, zap.Error(err))
+		attrs = append(attrs, "error", err.Error())
 	}
-	for k, v := range fields {
-		zapFields = append(zapFields, zap.Any(k, v))
-	}
-	l.Logger.Error(msg, zapFields...)
+	l.Logger.Error(msg, attrs...)
 }
 
 func (l *LoggerClient) Warning(msg string, fields map[string]interface{}) {
-	zapFields := make([]zap.Field, 0, len(fields))
-	for k, v := range fields {
-		zapFields = append(zapFields, zap.Any(k, v))
-	}
-	l.Logger.Warn(msg, zapFields...)
+	attrs := l.convertToSlogAny(fields)
+	l.Logger.Warn(msg, attrs...)
 }
 
 func (l *LoggerClient) Debug(msg string, fields map[string]interface{}) {
-	zapFields := make([]zap.Field, 0, len(fields))
-	for k, v := range fields {
-		zapFields = append(zapFields, zap.Any(k, v))
-	}
-	l.Logger.Debug(msg, zapFields...)
+	attrs := l.convertToSlogAny(fields)
+	l.Logger.Debug(msg, attrs...)
 }
 
 func (l *LoggerClient) Fatal(msg string, err error, fields map[string]interface{}) {
-	zapFields := make([]zap.Field, 0, len(fields)+1)
+	attrs := l.convertToSlogAny(fields)
 	if err != nil {
-		zapFields = append(zapFields, zap.Error(err))
+		attrs = append(attrs, "error", err.Error())
 	}
-	for k, v := range fields {
-		zapFields = append(zapFields, zap.Any(k, v))
-	}
-	l.Logger.Fatal(msg, zapFields...)
+	l.Logger.Error(msg, attrs...)
+	panic(msg) // Fatal should terminate the program
 }
 
 // Convenience methods for simple logging
@@ -270,7 +207,7 @@ func (l *LoggerClient) InfoSimple(msg string) {
 
 func (l *LoggerClient) ErrorSimple(msg string, err error) {
 	if err != nil {
-		l.Logger.Error(msg, zap.Error(err))
+		l.Logger.Error(msg, "error", err.Error())
 	} else {
 		l.Logger.Error(msg)
 	}

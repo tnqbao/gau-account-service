@@ -184,9 +184,7 @@ func (ctrl *Controller) EnableTOTP(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		OTPCode string `json:"otp_code" binding:"required"`
-	}
+	var req TOTPEnableRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[MFA] Failed to bind JSON request for user: %s", uuidUserID.String())
@@ -285,11 +283,7 @@ func (ctrl *Controller) VerifyTOTP(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		OTPCode  string `json:"otp_code" binding:"required"`
-		DeviceID string `json:"device_id" binding:"required"`
-	}
-
+	var req TOTPVerifyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[MFA] Failed to bind JSON request for user: %s", uuidUserID.String())
 		utils.JSON400(c, "Invalid request format: "+err.Error())
