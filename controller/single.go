@@ -14,6 +14,7 @@ import (
 
 func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 	ctx := c.Request.Context()
+
 	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Google Login] Google authentication request received")
 
 	var req ClientRequestGoogleAuthentication
@@ -200,26 +201,23 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 		return
 	}
 
-	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Google Login] Creating access token for user: %s, device: %s", user.UserID.String(), deviceID)
+	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Google Login] Creating tokens for user: %s with device: %s", user.UserID.String(), deviceID)
 
-	accessToken, refreshToken, expiresAt, err := ctrl.Provider.AuthorizationServiceProvider.CreateNewToken(
-		user.UserID,
-		user.Permission,
-		deviceID,
-	)
+	accessToken, refreshToken, expiresAt, err := ctrl.Provider.AuthorizationServiceProvider.CreateNewToken(user.UserID, user.Permission, deviceID)
 	if err != nil {
-		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Google Login] Failed to generate token for user: %s", user.UserID.String())
-		utils.JSON500(c, "failed to generate token")
+		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Google Login] Failed to create tokens for user: %s", user.UserID.String())
+		utils.JSON500(c, "Failed to create authentication tokens")
 		return
 	}
 
 	expiresIn := int(time.Until(expiresAt).Seconds())
 
+	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Google Login] Tokens created successfully for user: %s", user.UserID.String())
+
 	ctrl.SetAccessCookie(c, accessToken, expiresIn)
 	ctrl.SetRefreshCookie(c, refreshToken, 30*24*60*60)
 
-	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Google Login] Login completed successfully for user: %s, device: %s, expires_in: %d",
-		user.UserID.String(), deviceID, expiresIn)
+	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Google Login] Google login completed successfully for user: %s", user.UserID.String())
 
 	utils.JSON200(c, gin.H{
 		"access_token":  accessToken,
@@ -228,12 +226,155 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 	})
 }
 
-func (ctrl *Controller) LoginWithFacebook(c *gin.Context) {
-	ctx := c.Request.Context()
-	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] Facebook authentication request received")
-	ctrl.Provider.LoggerProvider.WarningWithContextf(ctx, "[Facebook Login] Facebook login not implemented yet")
-
-	utils.JSON200(c, gin.H{
-		"message": "Login with Facebook is not implemented yet",
-	})
-}
+//func (ctrl *Controller) LoginWithFacebook(c *gin.Context) {
+//	ctx := c.Request.Context()
+//
+//	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] Facebook authentication request received")
+//
+//	var req ClientRequestFacebookAuthentication
+//	if err := c.ShouldBindJSON(&req); err != nil {
+//		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Facebook Login] Failed to bind JSON request")
+//		utils.JSON400(c, "invalid request")
+//		return
+//	}
+//
+//	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] Validating Facebook token")
+//
+//	facebookUser, err := provider.GetUserInfoFromFacebook(req.Token)
+//	if err != nil {
+//		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Facebook Login] Invalid Facebook token provided")
+//		utils.JSON401(c, "invalid Facebook token")
+//		return
+//	}
+//
+//	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] Facebook user info retrieved - Email: %s, Name: %s", facebookUser.Email, facebookUser.Name)
+//
+//	email := facebookUser.Email
+//	if !ctrl.IsValidEmail(email) {
+//		ctrl.Provider.LoggerProvider.WarningWithContextf(ctx, "[Facebook Login] Invalid email format from Facebook: %s", email)
+//		utils.JSON400(c, "invalid email from Facebook")
+//		return
+//	}
+//
+//	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] Checking if user exists with email: %s", email)
+//
+//	user, err := ctrl.Repository.GetUserByEmail(email)
+//	if err != nil {
+//		if err == gorm.ErrRecordNotFound {
+//			ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] User not found, creating new user for email: %s", email)
+//
+//			userID := uuid.New()
+//			newUser := &entity.User{
+//				UserID:     userID,
+//				Email:      &facebookUser.Email,
+//				FullName:   &facebookUser.Name,
+//				Permission: "member",
+//			}
+//
+//			ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] Starting user creation transaction for new user: %s", userID.String())
+//
+//			err := ctrl.ExecuteInTransaction(func(tx *gorm.DB) error {
+//				if facebookUser.Name != "" {
+//					ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] Generating username from full name for user: %s", userID.String())
+//					username, err := ctrl.GenerateUsernameFromFullNameWithTransaction(tx, facebookUser.Name)
+//					if err != nil {
+//						ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Facebook Login] Failed to generate username for user: %s", userID.String())
+//						return fmt.Errorf("failed to generate username: %w", err)
+//					}
+//					newUser.Username = &username
+//					ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] Username generated for user: %s", userID.String())
+//				}
+//
+//				if facebookUser.Picture.Data.URL != "" {
+//					ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] Uploading avatar from Facebook for user: %s", userID.String())
+//					imageURL, err := ctrl.UploadAvatarFromURL(userID, facebookUser.Picture.Data.URL)
+//					if err != nil {
+//						ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Facebook Login] Failed to upload avatar for user: %s", userID.String())
+//						return fmt.Errorf("failed to upload avatar: %w", err)
+//					}
+//					// Add CDN URL prefix
+//					fullImageURL := fmt.Sprintf("%s/images/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL)
+//					newUser.AvatarURL = &fullImageURL
+//					ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] Avatar uploaded successfully for user: %s", userID.String())
+//				}
+//
+//				// Create user within transaction
+//				if err := ctrl.Repository.CreateUserWithTransaction(tx, newUser); err != nil {
+//					ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Facebook Login] Failed to create user in database: %s", userID.String())
+//					return fmt.Errorf("failed to create user: %w", err)
+//				}
+//
+//				ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] User created successfully: %s", userID.String())
+//
+//				// Create email verification record for Facebook user
+//				if facebookUser.Email != "" {
+//					ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] Creating email verification record for user: %s", userID.String())
+//
+//					emailVerification := entity.UserVerification{
+//						ID:         uuid.New(),
+//						UserID:     userID,
+//						Method:     "email",
+//						Value:      facebookUser.Email,
+//						IsVerified: true, // Facebook emails are considered verified
+//					}
+//					now := time.Now()
+//					emailVerification.VerifiedAt = &now
+//
+//					if err := ctrl.Repository.CreateUserVerificationWithTransaction(tx, &emailVerification); err != nil {
+//						ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Facebook Login] Failed to create email verification for user: %s", userID.String())
+//						return fmt.Errorf("failed to create email verification: %w", err)
+//					}
+//
+//					ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] Email verification record created for user: %s", userID.String())
+//				}
+//
+//				return nil
+//			})
+//
+//			if err != nil {
+//				ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Facebook Login] Transaction failed for new user creation")
+//				utils.JSON500(c, "Failed to create user: "+err.Error())
+//				return
+//			}
+//
+//			ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] New user creation completed successfully: %s", userID.String())
+//			user = newUser
+//		} else {
+//			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Facebook Login] Database error while checking user existence")
+//			utils.JSON500(c, "database error")
+//			return
+//		}
+//	} else {
+//		ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] Existing user found: %s", user.UserID.String())
+//	}
+//
+//	deviceID := c.GetHeader("X-Device-ID")
+//	if deviceID == "" {
+//		ctrl.Provider.LoggerProvider.WarningWithContextf(ctx, "[Facebook Login] Missing device ID for user: %s", user.UserID.String())
+//		utils.JSON400(c, "X-Device-ID header is required")
+//		return
+//	}
+//
+//	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] Creating tokens for user: %s with device: %s", user.UserID.String(), deviceID)
+//
+//	accessToken, refreshToken, err := ctrl.Provider.AuthorizationServiceProvider.CreateTokens(user.UserID.String(), deviceID)
+//	if err != nil {
+//		ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Facebook Login] Failed to create tokens for user: %s", user.UserID.String())
+//		utils.JSON500(c, "Failed to create authentication tokens")
+//		return
+//	}
+//
+//	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] Tokens created successfully for user: %s", user.UserID.String())
+//
+//	c.SetCookie("access_token", accessToken, 3600*24*7, "/", "", false, true)
+//	c.SetCookie("refresh_token", refreshToken, 3600*24*7, "/", "", false, true)
+//
+//	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Facebook Login] Facebook login completed successfully for user: %s", user.UserID.String())
+//
+//	utils.JSON200(c, gin.H{
+//		"access_token":  accessToken,
+//		"refresh_token": refreshToken,
+//		"user_info":     user,
+//		"message":       "Login successful",
+//	})
+//}
