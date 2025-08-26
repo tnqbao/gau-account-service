@@ -199,7 +199,12 @@ func (l *LoggerClient) Shutdown(ctx context.Context) error {
 // Context-aware logging methods with trace information
 func (l *LoggerClient) InfoWithContext(ctx context.Context, msg string, fields map[string]interface{}) {
 	attrs := l.extractContextAttributes(ctx, fields)
-	l.Logger.InfoContext(ctx, msg, attrs...)
+	// Convert []slog.Attr to []any
+	args := make([]any, len(attrs))
+	for i, attr := range attrs {
+		args[i] = attr
+	}
+	l.Logger.InfoContext(ctx, msg, args...)
 }
 
 func (l *LoggerClient) ErrorWithContext(ctx context.Context, msg string, err error, fields map[string]interface{}) {
@@ -207,24 +212,44 @@ func (l *LoggerClient) ErrorWithContext(ctx context.Context, msg string, err err
 	if err != nil {
 		attrs = append(attrs, slog.Any("error", err))
 	}
-	l.Logger.ErrorContext(ctx, msg, attrs...)
+	// Convert []slog.Attr to []any
+	args := make([]any, len(attrs))
+	for i, attr := range attrs {
+		args[i] = attr
+	}
+	l.Logger.ErrorContext(ctx, msg, args...)
 }
 
 func (l *LoggerClient) WarningWithContext(ctx context.Context, msg string, fields map[string]interface{}) {
 	attrs := l.extractContextAttributes(ctx, fields)
-	l.Logger.WarnContext(ctx, msg, attrs...)
+	// Convert []slog.Attr to []any
+	args := make([]any, len(attrs))
+	for i, attr := range attrs {
+		args[i] = attr
+	}
+	l.Logger.WarnContext(ctx, msg, args...)
 }
 
 func (l *LoggerClient) DebugWithContext(ctx context.Context, msg string, fields map[string]interface{}) {
 	attrs := l.extractContextAttributes(ctx, fields)
-	l.Logger.DebugContext(ctx, msg, attrs...)
+	// Convert []slog.Attr to []any
+	args := make([]any, len(attrs))
+	for i, attr := range attrs {
+		args[i] = attr
+	}
+	l.Logger.DebugContext(ctx, msg, args...)
 }
 
 // Printf-style formatting methods with context
 func (l *LoggerClient) InfoWithContextf(ctx context.Context, format string, args ...interface{}) {
 	attrs := l.extractContextAttributes(ctx, nil)
 	msg := fmt.Sprintf(format, args...)
-	l.Logger.InfoContext(ctx, msg, attrs...)
+	// Convert []slog.Attr to []any
+	logArgs := make([]any, len(attrs))
+	for i, attr := range attrs {
+		logArgs[i] = attr
+	}
+	l.Logger.InfoContext(ctx, msg, logArgs...)
 }
 
 func (l *LoggerClient) ErrorWithContextf(ctx context.Context, err error, format string, args ...interface{}) {
@@ -233,19 +258,34 @@ func (l *LoggerClient) ErrorWithContextf(ctx context.Context, err error, format 
 		attrs = append(attrs, slog.Any("error", err))
 	}
 	msg := fmt.Sprintf(format, args...)
-	l.Logger.ErrorContext(ctx, msg, attrs...)
+	// Convert []slog.Attr to []any
+	logArgs := make([]any, len(attrs))
+	for i, attr := range attrs {
+		logArgs[i] = attr
+	}
+	l.Logger.ErrorContext(ctx, msg, logArgs...)
 }
 
 func (l *LoggerClient) WarningWithContextf(ctx context.Context, format string, args ...interface{}) {
 	attrs := l.extractContextAttributes(ctx, nil)
 	msg := fmt.Sprintf(format, args...)
-	l.Logger.WarnContext(ctx, msg, attrs...)
+	// Convert []slog.Attr to []any
+	logArgs := make([]any, len(attrs))
+	for i, attr := range attrs {
+		logArgs[i] = attr
+	}
+	l.Logger.WarnContext(ctx, msg, logArgs...)
 }
 
 func (l *LoggerClient) DebugWithContextf(ctx context.Context, format string, args ...interface{}) {
 	attrs := l.extractContextAttributes(ctx, nil)
 	msg := fmt.Sprintf(format, args...)
-	l.Logger.DebugContext(ctx, msg, attrs...)
+	// Convert []slog.Attr to []any
+	logArgs := make([]any, len(attrs))
+	for i, attr := range attrs {
+		logArgs[i] = attr
+	}
+	l.Logger.DebugContext(ctx, msg, logArgs...)
 }
 
 // Helper method to extract trace information from context
@@ -271,38 +311,38 @@ func (l *LoggerClient) extractContextAttributes(ctx context.Context, fields map[
 
 // Core logging methods without context
 func (l *LoggerClient) Info(msg string, fields map[string]interface{}) {
-	attrs := make([]slog.Attr, 0, len(fields))
+	attrs := make([]any, 0, len(fields))
 	for k, v := range fields {
 		attrs = append(attrs, slog.Any(k, v))
 	}
-	l.Logger.Info(msg, slog.Group("fields", attrs...))
+	l.Logger.Info(msg, attrs...)
 }
 
 func (l *LoggerClient) Error(msg string, err error, fields map[string]interface{}) {
-	attrs := make([]slog.Attr, 0, len(fields)+1)
+	attrs := make([]any, 0, len(fields)+1)
 	if err != nil {
 		attrs = append(attrs, slog.Any("error", err))
 	}
 	for k, v := range fields {
 		attrs = append(attrs, slog.Any(k, v))
 	}
-	l.Logger.Error(msg, slog.Group("fields", attrs...))
+	l.Logger.Error(msg, attrs...)
 }
 
 func (l *LoggerClient) Warning(msg string, fields map[string]interface{}) {
-	attrs := make([]slog.Attr, 0, len(fields))
+	attrs := make([]any, 0, len(fields))
 	for k, v := range fields {
 		attrs = append(attrs, slog.Any(k, v))
 	}
-	l.Logger.Warn(msg, slog.Group("fields", attrs...))
+	l.Logger.Warn(msg, attrs...)
 }
 
 func (l *LoggerClient) Debug(msg string, fields map[string]interface{}) {
-	attrs := make([]slog.Attr, 0, len(fields))
+	attrs := make([]any, 0, len(fields))
 	for k, v := range fields {
 		attrs = append(attrs, slog.Any(k, v))
 	}
-	l.Logger.Debug(msg, slog.Group("fields", attrs...))
+	l.Logger.Debug(msg, attrs...)
 }
 
 // Convenience methods for simple logging
