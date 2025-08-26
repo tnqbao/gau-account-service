@@ -103,10 +103,11 @@ func setupOTelSDK(ctx context.Context, cfg *config.EnvConfig) (shutdown func(con
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
 			semconv.ServiceNameKey.String(cfg.Grafana.ServiceName),
-			semconv.DeploymentEnvironmentName("production"), // có thể lấy từ config
-			semconv.ServiceNamespace("gau-services"),
+			semconv.DeploymentEnvironmentName(cfg.Environment.Mode), // có thể lấy từ config
+			semconv.ServiceNamespace(cfg.Environment.Group),
 			attribute.String("service.name", cfg.Grafana.ServiceName),
-			attribute.String("deployment.environment", "production"),
+			attribute.String("deployment.environment", cfg.Environment.Mode),
+			attribute.String("service.namespace", cfg.Environment.Group),
 		),
 	)
 	if err != nil {
