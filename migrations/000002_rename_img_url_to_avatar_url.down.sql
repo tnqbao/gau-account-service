@@ -1,1 +1,0 @@
-ALTER TABLE users RENAME COLUMN avatar_url TO img_url;
