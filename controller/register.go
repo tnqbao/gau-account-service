@@ -70,6 +70,16 @@ func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 		Gender:      &req.Gender,
 	}
 
+	if req.Username == nil {
+		generatedUsername, err := ctrl.GenerateUsernameFromFullNameWithTransaction(tx, req.FullName)
+		if err != nil {
+			tx.Rollback()
+			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Register] Failed to generate username from full name: %s", req.FullName)
+			utils.JSON500(c, "Internal server error")
+		}
+		user.Username = &generatedUsername
+	}
+
 	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Register] Creating user with ID: %s", user.UserID.String())
 
 	// Create the user

@@ -238,7 +238,7 @@ func (ctrl *Controller) GenerateUsernameFromFullName(fullName string) string {
 	}
 
 	// Remove spaces and convert to uppercase
-	username := strings.ToUpper(strings.ReplaceAll(fullName, " ", ""))
+	username := strings.ToLower(strings.ReplaceAll(fullName, " ", ""))
 
 	return username
 }
@@ -250,10 +250,10 @@ func (ctrl *Controller) GenerateUsernameFromFullNameWithTransaction(tx *gorm.DB,
 	}
 
 	// Remove spaces and convert to uppercase
-	baseUsername := strings.ToUpper(strings.ReplaceAll(fullName, " ", ""))
+	baseUsername := strings.ToLower(strings.ReplaceAll(fullName, " ", ""))
 
 	// Count users with the same fullname within transaction
-	count, err := ctrl.Repository.CountUsersByFullNameWithTransaction(tx, fullName)
+	count, err := ctrl.Repository.CountUsersByUsernameWithTransaction(tx, baseUsername)
 	if err != nil {
 		return "", fmt.Errorf("failed to count users with fullname: %w", err)
 	}

@@ -141,19 +141,19 @@ func (r *Repository) GetUserByEmail(email string) (*entity.User, error) {
 }
 
 // CountUsersByFullName counts users with the same fullname
-func (r *Repository) CountUsersByFullName(fullName string) (int64, error) {
+func (r *Repository) CountUsersByUsername(fullName string) (int64, error) {
 	var count int64
-	if err := r.Db.Model(&entity.User{}).Where("full_name = ?", fullName).Count(&count).Error; err != nil {
+	if err := r.Db.Model(&entity.User{}).Where("username = ?", fullName).Count(&count).Error; err != nil {
 		return 0, fmt.Errorf("error counting users by fullname: %v", err)
 	}
 	return count, nil
 }
 
-// CountUsersByFullNameWithTransaction counts users with the same fullname within a transaction
-func (r *Repository) CountUsersByFullNameWithTransaction(tx *gorm.DB, fullName string) (int64, error) {
+// CountUsersByUsernameWithTransaction counts users with the same fullname within a transaction
+func (r *Repository) CountUsersByUsernameWithTransaction(tx *gorm.DB, fullName string) (int64, error) {
 	var count int64
-	if err := tx.Model(&entity.User{}).Where("full_name = ?", fullName).Count(&count).Error; err != nil {
-		return 0, fmt.Errorf("error counting users by fullname: %v", err)
+	if err := tx.Model(&entity.User{}).Where("username = ?", fullName).Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("error counting users by username: %v", err)
 	}
 	return count, nil
 }
