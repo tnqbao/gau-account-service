@@ -143,7 +143,7 @@ func (r *Repository) GetUserByEmail(email string) (*entity.User, error) {
 // CountUsersByFullName counts users with the same fullname
 func (r *Repository) CountUsersByUsername(fullName string) (int64, error) {
 	var count int64
-	if err := r.Db.Model(&entity.User{}).Where("full_name = ?", fullName).Count(&count).Error; err != nil {
+	if err := r.Db.Model(&entity.User{}).Where("username = ?", fullName).Count(&count).Error; err != nil {
 		return 0, fmt.Errorf("error counting users by fullname: %v", err)
 	}
 	return count, nil
