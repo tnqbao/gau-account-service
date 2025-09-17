@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/mozillazg/go-unidecode"
 	"github.com/tnqbao/gau-account-service/shared/entity"
 	"gorm.io/gorm"
 )
@@ -231,14 +232,20 @@ func (ctrl *Controller) ExecuteInTransaction(fn func(tx *gorm.DB) error) error {
 	return ctrl.Repository.Db.Transaction(fn)
 }
 
-// GenerateUsernameFromFullName generates username from fullname: no space, uppercase + count
+// RemoveVietnameseDiacritics removes Vietnamese diacritics from text using unidecode library
+func (ctrl *Controller) RemoveVietnameseDiacritics(text string) string {
+	return unidecode.Unidecode(text)
+}
+
+// GenerateUsernameFromFullName generates username from fullname: no space, lowercase + diacritic removal
 func (ctrl *Controller) GenerateUsernameFromFullName(fullName string) string {
 	if fullName == "" {
 		return ""
 	}
 
-	// Remove spaces and convert to uppercase
-	username := strings.ToLower(strings.ReplaceAll(fullName, " ", ""))
+	// Remove Vietnamese diacritics, spaces and convert to lowercase
+	normalizedName := ctrl.RemoveVietnameseDiacritics(fullName)
+	username := strings.ToLower(strings.ReplaceAll(normalizedName, " ", ""))
 
 	return username
 }
@@ -249,13 +256,14 @@ func (ctrl *Controller) GenerateUsernameFromFullNameWithTransaction(tx *gorm.DB,
 		return "", fmt.Errorf("fullname cannot be empty")
 	}
 
-	// Remove spaces and convert to uppercase
-	baseUsername := strings.ToLower(strings.ReplaceAll(fullName, " ", ""))
+	// Remove Vietnamese diacritics, spaces and convert to lowercase
+	normalizedName := ctrl.RemoveVietnameseDiacritics(fullName)
+	baseUsername := strings.ToLower(strings.ReplaceAll(normalizedName, " ", ""))
 
-	// Count users with the same fullname within transaction
+	// Count users with the same username within transaction
 	count, err := ctrl.Repository.CountUsersByUsernameWithTransaction(tx, baseUsername)
 	if err != nil {
-		return "", fmt.Errorf("failed to count users with fullname: %w", err)
+		return "", fmt.Errorf("failed to count users with username: %w", err)
 	}
 
 	// Generate username with count

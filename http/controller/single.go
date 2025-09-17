@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	entity2 "github.com/tnqbao/gau-account-service/shared/entity"
+	entity "github.com/tnqbao/gau-account-service/shared/entity"
 	"github.com/tnqbao/gau-account-service/shared/provider"
 	"github.com/tnqbao/gau-account-service/shared/utils"
 	"gorm.io/gorm"
@@ -51,7 +51,7 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 			ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Google Login] User not found, creating new user for email: %s", email)
 
 			userID := uuid.New()
-			newUser := &entity2.User{
+			newUser := &entity.User{
 				UserID:     userID,
 				Email:      &googleUser.Email,
 				FullName:   &googleUser.Name,
@@ -97,7 +97,7 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 				if googleUser.Email != "" {
 					ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Google Login] Creating email verification record for user: %s - Verified: %v", userID.String(), googleUser.EmailVerified)
 
-					emailVerification := entity2.UserVerification{
+					emailVerification := entity.UserVerification{
 						ID:         uuid.New(),
 						UserID:     userID,
 						Method:     "email",
@@ -165,7 +165,7 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 				} else if verification == nil {
 					ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Google Login] Creating missing email verification record for user: %s", user.UserID.String())
 					// Create verification record if it doesn't exist
-					emailVerification := entity2.UserVerification{
+					emailVerification := entity.UserVerification{
 						ID:         uuid.New(),
 						UserID:     user.UserID,
 						Method:     "email",
