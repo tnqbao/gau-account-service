@@ -1,5 +1,11 @@
 #!/bin/sh
-# Run migrations for the application
+
+# Get service type from first argument, default to "http"
+SERVICE_TYPE=${1:-http}
+
+echo "Starting service: $SERVICE_TYPE"
+
+# Run migrations first for both services (common step)
 echo "Running migrations..."
 migrate -database "$PGPOOL_URL" -path migrations up
 if [ $? -ne 0 ]; then
@@ -8,11 +14,12 @@ if [ $? -ne 0 ]; then
 fi
 echo "Migrations completed successfully."
 
-# Start the application
-echo "Starting API..."
-if [ -f "gau-account-service.bin" ]; then
-    ./gau-account-service.bin
+# Start the appropriate service
+if [ "$SERVICE_TYPE" = "consumer" ]; then
+    echo "Starting Consumer service..."
+    ./consumer-service
 else
-    echo "Running main.go..."
-    go run main.go
+    # Default to HTTP service
+    echo "Starting HTTP API service..."
+    ./http-service
 fi

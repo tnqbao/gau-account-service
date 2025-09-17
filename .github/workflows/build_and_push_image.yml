@@ -30,3 +30,4 @@ jobs:
           context: .
           push: true
           tags: iamqbao/gau_account_service:latest
+

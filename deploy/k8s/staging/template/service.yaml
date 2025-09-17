@@ -5,7 +5,22 @@ metadata:
   namespace: bao-${DEPLOY_ENV}-env
 spec:
   selector:
-    app: gau-account-service
+    app: gau-account-api-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: gau-account-consumer-service
+  namespace: bao-${DEPLOY_ENV}-env
+spec:
+  selector:
+    app: gau-account-consumer-service
   ports:
     - name: http
       port: 8080

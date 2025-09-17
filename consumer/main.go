@@ -1,11 +1,9 @@
-// build
 package main
 
 import (
 	"log"
 
 	"github.com/joho/godotenv"
-	"github.com/tnqbao/gau-account-service/http/routes"
 	"github.com/tnqbao/gau-account-service/shared/config"
 )
 
@@ -17,6 +15,10 @@ func main() {
 
 	cfg := config.NewConfig()
 
-	router := routes.SetupRouter(cfg)
-	router.Run(":8080")
+	// TODO: Initialize message queue consumers here
+	// This is a placeholder consumer service
+	log.Printf("Consumer service starting with config: %+v", cfg.EnvConfig.Environment)
+
+	// Keep the service running
+	select {}
 }
