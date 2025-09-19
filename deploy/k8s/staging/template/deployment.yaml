@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gau-account-deployment
+  name: gau-account-http-deployment
   namespace: bao-${DEPLOY_ENV}-env
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gau-account-service
+      app: gau-account-api-service
   template:
     metadata:
       labels:
-        app: gau-account-service
+        app: gau-account-api-service
     spec:
       containers:
-        - name: gau-account-service
+        - name: gau-account-api-service
           image: iamqbao/gau_account_service:latest
           imagePullPolicy: Always
           envFrom:
@@ -22,6 +22,40 @@ spec:
                 name: bao-account-${DEPLOY_ENV}-config
             - secretRef:
                 name: bao-account-${DEPLOY_ENV}-secret
+          command: [ "app/entrypoint.sh"]
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "100Mi"
+            limits:
+              cpu: "100m"
+              memory: "500Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gau-account-consumer-deployment
+  namespace: bao-${DEPLOY_ENV}-env
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gau-account-consumer-service
+  template:
+    metadata:
+      labels:
+        app: gau-account-consumer-service
+    spec:
+      containers:
+        - name: gau-account-consumer-service
+          image: iamqbao/gau_account_service:latest
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: bao-account-${DEPLOY_ENV}-config
+            - secretRef:
+                name: bao-account-${DEPLOY_ENV}-secret
+          command: ["app/entrypoint.sh", "consumer"]
           resources:
             requests:
               cpu: "50m"
