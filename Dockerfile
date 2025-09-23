@@ -29,7 +29,6 @@ RUN apk add --no-cache \
     && chmod +x /usr/local/bin/migrate \
     && rm -rf /tmp/*
 
-# Copy binaries and required files
 COPY --from=builder /app/http-service .
 COPY --from=builder /app/consumer-service .
 COPY deploy/migrations ./migrations
