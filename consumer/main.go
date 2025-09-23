@@ -1,24 +1,23 @@
 package main
 
 import (
+	"context"
 	"log"
+	"os/signal"
+	"syscall"
 
 	"github.com/joho/godotenv"
 	"github.com/tnqbao/gau-account-service/shared/config"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("No .env file found, continuing with environment variables")
-	}
-
+	_ = godotenv.Load()
 	cfg := config.NewConfig()
-
-	// TODO: Initialize message queue consumers here
-	// This is a placeholder consumer service
 	log.Printf("Consumer service starting with config: %+v", cfg.EnvConfig.Environment)
 
-	// Keep the service running
-	select {}
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	<-ctx.Done()
+	log.Println("Shutting down consumer service gracefully...")
 }
