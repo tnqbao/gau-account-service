@@ -12,3 +12,7 @@ func (ctrl *Controller) TestDeployment(c *gin.Context) {
 func (ctrl *Controller) CheckHealth(c *gin.Context) {
 	utils.JSON200(c, gin.H{"status": "running"})
 }
+
+func (ctrl *Controller) Hello(c *gin.Context) {
+	utils.JSON200(c, gin.H{"message": "hello"})
+}
