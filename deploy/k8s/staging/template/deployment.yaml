@@ -7,21 +7,21 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gau-account-api-service
+      app: gau-account-http-service
   template:
     metadata:
       labels:
-        app: gau-account-api-service
+        app: gau-account-http-service
     spec:
       containers:
-        - name: gau-account-api-service
+        - name: gau-account-http-service
           image: iamqbao/gau_account_service:latest
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
-                name: bao-account-${DEPLOY_ENV}-config
+                name: gau-account-${DEPLOY_ENV}-config
             - secretRef:
-                name: bao-account-${DEPLOY_ENV}-secret
+                name: gau-account-${DEPLOY_ENV}-secret
           resources:
             requests:
               cpu: "50m"
@@ -52,9 +52,9 @@ spec:
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
-                name: bao-account-${DEPLOY_ENV}-config
+                name: gau-account-${DEPLOY_ENV}-config
             - secretRef:
-                name: bao-account-${DEPLOY_ENV}-secret
+                name: gau-account-${DEPLOY_ENV}-secret
           args: ["consumer"]
           resources:
             requests:
