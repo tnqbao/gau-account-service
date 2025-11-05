@@ -17,7 +17,7 @@ type Controller struct {
 func NewController(config *config.Config, infra *infra.Infra) *Controller {
 
 	repo := repository.InitRepository(infra)
-	provide := provider.InitProvider(config.EnvConfig)
+	provide := provider.InitProvider(config.EnvConfig, infra)
 	if repo == nil {
 		panic("Failed to initialize Repository")
 	}

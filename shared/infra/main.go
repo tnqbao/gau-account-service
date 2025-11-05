@@ -5,9 +5,10 @@ import (
 )
 
 type Infra struct {
-	//Redis    *RedisClient
+	Redis    *RedisClient
 	Postgres *PostgresClient
 	Logger   *LoggerClient
+	RabbitMQ *RabbitMQClient
 }
 
 var infraInstance *Infra
@@ -17,10 +18,10 @@ func InitInfra(cfg *config.Config) *Infra {
 		return infraInstance
 	}
 
-	//redis := InitRedisClient(cfg.EnvConfig)
-	//if redis == nil {
-	//	panic("Failed to initialize Redis service")
-	//}
+	redis := InitRedisClient(cfg.EnvConfig)
+	if redis == nil {
+		panic("Failed to initialize Redis service")
+	}
 
 	postgres := InitPostgresClient(cfg.EnvConfig)
 	if postgres == nil {
@@ -32,10 +33,16 @@ func InitInfra(cfg *config.Config) *Infra {
 		panic("Failed to initialize Logger service")
 	}
 
+	rabbitMQ := InitRabbitMQClient(cfg.EnvConfig)
+	if rabbitMQ == nil {
+		panic("Failed to initialize RabbitMQ service")
+	}
+
 	infraInstance = &Infra{
-		//Redis:    redis,
+		Redis:    redis,
 		Postgres: postgres,
 		Logger:   logger,
+		RabbitMQ: rabbitMQ,
 	}
 
 	return infraInstance
