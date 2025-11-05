@@ -3,6 +3,7 @@ package repository
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	entity2 "github.com/tnqbao/gau-account-service/shared/entity"
@@ -221,6 +222,20 @@ func (r *Repository) GetUserVerificationByMethodAndValue(userID uuid.UUID, metho
 func (r *Repository) UpdateUserVerification(verification *entity2.UserVerification) error {
 	if err := r.Db.Save(verification).Error; err != nil {
 		return fmt.Errorf("error updating user verification: %v", err)
+	}
+	return nil
+}
+
+// UpdateEmailVerificationStatus updates the email verification status to verified
+func (r *Repository) UpdateEmailVerificationStatus(userID uuid.UUID, email string) error {
+	now := time.Now()
+	if err := r.Db.Model(&entity2.UserVerification{}).
+		Where("user_id = ? AND method = ? AND value = ?", userID, "email", email).
+		Updates(map[string]interface{}{
+			"is_verified": true,
+			"verified_at": now,
+		}).Error; err != nil {
+		return fmt.Errorf("error updating email verification status: %v", err)
 	}
 	return nil
 }

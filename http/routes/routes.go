@@ -27,6 +27,10 @@ func SetupRouter(config *config.Config) *gin.Engine {
 			identifierRoutes.POST("/login", ctrl.LoginWithIdentifierAndPassword)
 		}
 
+		// Email verification routes
+		apiRoutes.GET("/verify-email/:token", ctrl.VerifyEmail)
+		apiRoutes.POST("/send-verification/:user_id", ctrl.SendEmailVerification)
+
 		profileRoutes := apiRoutes.Group("/profile")
 		{
 			profileRoutes.Use(useMiddlewares.AuthMiddleware)
