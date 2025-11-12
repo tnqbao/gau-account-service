@@ -26,16 +26,16 @@ spec:
       targetPort: 8080
   type: ClusterIP
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: redis-account-service
-  namespace: bao-${DEPLOY_ENV}-env
-spec:
-  selector:
-    app: redis-account-service
-  ports:
-    - name: redis
-      port: 6379
-      targetPort: 6379
-  type: ClusterIP
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: redis-account-service
+#  namespace: bao-${DEPLOY_ENV}-env
+#spec:
+#  selector:
+#    app: redis-account-service
+#  ports:
+#    - name: redis
+#      port: 6379
+#      targetPort: 6379
+#  type: ClusterIP
