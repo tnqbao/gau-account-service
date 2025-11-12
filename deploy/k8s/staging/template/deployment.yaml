@@ -25,10 +25,10 @@ spec:
           resources:
             requests:
               cpu: "50m"
-              memory: "100Mi"
+              memory: "128Mi"
             limits:
               cpu: "100m"
-              memory: "500Mi"
+              memory: "256Mi"
 
 ---
 apiVersion: apps/v1
@@ -58,39 +58,39 @@ spec:
           args: ["consumer"]
           resources:
             requests:
+              cpu: "20m"
+              memory: "64Mi"
+            limits:
               cpu: "50m"
-              memory: "100Mi"
-            limits:
-              cpu: "100m"
-              memory: "500Mi"
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: redis-account-deployment
-  namespace: bao-${DEPLOY_ENV}-env
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: redis-account-service
-  template:
-    metadata:
-      labels:
-        app: redis-account-service
-    spec:
-      containers:
-        - name: redis-account-service
-          envFrom:
-            - configMapRef:
-                name: gau-account-${DEPLOY_ENV}-config
-            - secretRef:
-                name: gau-account-${DEPLOY_ENV}-secret
-          image: redis:7.2-alpine
-          resources:
-            requests:
-              cpu: "0.2"
               memory: "128Mi"
-            limits:
-              cpu: "0.5"
-              memory: "256Mi"
+---
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: redis-account-deployment
+#  namespace: bao-${DEPLOY_ENV}-env
+#spec:
+#  replicas: 1
+#  selector:
+#    matchLabels:
+#      app: redis-account-service
+#  template:
+#    metadata:
+#      labels:
+#        app: redis-account-service
+#    spec:
+#      containers:
+#        - name: redis-account-service
+#          envFrom:
+#            - configMapRef:
+#                name: gau-account-${DEPLOY_ENV}-config
+#            - secretRef:
+#                name: gau-account-${DEPLOY_ENV}-secret
+#          image: redis:7.2-alpine
+#          resources:
+#            requests:
+#              cpu: "0.2"
+#              memory: "128Mi"
+#            limits:
+#              cpu: "0.5"
+#              memory: "256Mi"

@@ -17,9 +17,19 @@ echo "Migrations completed successfully."
 # Start the appropriate service
 if [ "$SERVICE_TYPE" = "consumer" ]; then
     echo "Starting Consumer service..."
-    ./consumer-service
+    if [ -f "./consumer-service" ]; then
+        ./consumer-service
+    else
+        echo "Binary not found. Running with 'go run'..."
+        go run consumer/main.go
+    fi
 else
     # Default to HTTP service
     echo "Starting HTTP API service..."
-    ./http-service
+    if [ -f "./http-service" ]; then
+        ./http-service
+    else
+        echo "Binary not found. Running with 'go run'..."
+        go run main.go
+    fi
 fi
