@@ -24,10 +24,10 @@ spec:
                 name: bao-account-${DEPLOY_ENV}-secret
           resources:
             requests:
-              cpu: "300m"
+              cpu: "100Mi"
               memory: "100Mi"
             limits:
-              cpu: "500m"
-              memory: "500Mi"
+              cpu: "200Mi"
+              memory: "200Mi"
 
 ---
