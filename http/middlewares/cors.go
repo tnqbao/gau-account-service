@@ -20,7 +20,7 @@ type CORSConfig struct {
 }
 
 func CORSMiddleware(config *config.EnvConfig) gin.HandlerFunc {
-	corsBytes, err := os.ReadFile("config/cors.json")
+	corsBytes, err := os.ReadFile("shared/config/cors.json")
 	if err != nil {
 		panic("Failed to read CORS config: " + err.Error())
 	}

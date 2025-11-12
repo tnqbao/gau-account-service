@@ -33,7 +33,7 @@ RUN apk add --no-cache \
 COPY --from=builder /app/http-service .
 COPY --from=builder /app/consumer-service .
 COPY deploy/migrations ./migrations
-COPY shared/config ./config
+COPY shared/config ./shared/config
 COPY entrypoint.sh .
 
 RUN chmod +x entrypoint.sh
