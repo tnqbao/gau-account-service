@@ -260,16 +260,44 @@ func (ctrl *Controller) GenerateUsernameFromFullNameWithTransaction(tx *gorm.DB,
 	normalizedName := ctrl.RemoveVietnameseDiacritics(fullName)
 	baseUsername := strings.ToLower(strings.ReplaceAll(normalizedName, " ", ""))
 
-	// Count users with the same username within transaction
-	count, err := ctrl.Repository.CountUsersByUsernameWithTransaction(tx, baseUsername)
+	// Get all usernames starting with baseUsername within transaction
+	usernames, err := ctrl.Repository.GetUsernamesStartingWithTransaction(tx, baseUsername)
 	if err != nil {
-		return "", fmt.Errorf("failed to count users with username: %w", err)
+		return "", fmt.Errorf("failed to get usernames: %w", err)
 	}
 
-	// Generate username with count
-	if count > 0 {
-		return fmt.Sprintf("%s%d", baseUsername, count), nil
+	// If no existing usernames, return the base username
+	if len(usernames) == 0 {
+		return baseUsername, nil
 	}
 
-	return baseUsername, nil
+	// Find the maximum suffix number
+	maxSuffix := -1
+	baseLen := len(baseUsername)
+
+	for _, username := range usernames {
+		if username == baseUsername {
+			// Exact match, set maxSuffix to 0 if not set
+			if maxSuffix < 0 {
+				maxSuffix = 0
+			}
+		} else if len(username) > baseLen && strings.HasPrefix(username, baseUsername) {
+			// Extract suffix and check if it's a number
+			suffix := username[baseLen:]
+			var num int
+			if _, err := fmt.Sscanf(suffix, "%d", &num); err == nil {
+				if num > maxSuffix {
+					maxSuffix = num
+				}
+			}
+		}
+	}
+
+	// Generate new username with next suffix
+	if maxSuffix < 0 {
+		// No matching usernames found (shouldn't happen, but just in case)
+		return baseUsername, nil
+	}
+
+	return fmt.Sprintf("%s%d", baseUsername, maxSuffix+1), nil
 }

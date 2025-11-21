@@ -78,6 +78,7 @@ func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 			tx.Rollback()
 			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Register] Failed to generate username from full name: %s", req.FullName)
 			utils.JSON500(c, "Internal server error")
+			return
 		}
 		user.Username = &generatedUsername
 	}
