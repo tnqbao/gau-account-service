@@ -74,7 +74,16 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 
 				if googleUser.Picture != "" {
 					ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Google Login] Uploading avatar from Google for user: %s", userID.String())
-					imageURL, err := ctrl.UploadAvatarFromURL(userID, googleUser.Picture)
+					// Use username for avatar hash generation (fallback to email if username not set yet)
+					usernameForHash := ""
+					if newUser.Username != nil {
+						usernameForHash = *newUser.Username
+					} else if newUser.Email != nil {
+						usernameForHash = *newUser.Email
+					} else {
+						usernameForHash = userID.String()
+					}
+					imageURL, err := ctrl.UploadAvatarFromURL(usernameForHash, googleUser.Picture)
 					if err != nil {
 						ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Google Login] Failed to upload avatar for user: %s", userID.String())
 						return fmt.Errorf("failed to upload avatar: %w", err)

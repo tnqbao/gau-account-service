@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -166,8 +167,17 @@ func (ctrl *Controller) GetFileExtensionFromContentType(contentType string, fall
 	}
 }
 
+// GenerateAvatarHash generates a unique hash from username and timestamp
+func (ctrl *Controller) GenerateAvatarHash(username string) string {
+	timestamp := time.Now().UnixNano()
+	data := fmt.Sprintf("%s_%d", username, timestamp)
+	hasher := sha256.New()
+	hasher.Write([]byte(data))
+	return hex.EncodeToString(hasher.Sum(nil))[:16] // Use first 16 characters for shorter hash
+}
+
 // UploadAvatarFromURL downloads an image from URL and uploads it to the upload service
-func (ctrl *Controller) UploadAvatarFromURL(userID uuid.UUID, imageURL string) (string, error) {
+func (ctrl *Controller) UploadAvatarFromURL(username string, imageURL string) (string, error) {
 	// Download image
 	fileBytes, contentType, err := ctrl.DownloadImageFromURL(imageURL)
 	if err != nil {
@@ -178,10 +188,10 @@ func (ctrl *Controller) UploadAvatarFromURL(userID uuid.UUID, imageURL string) (
 	extension := ctrl.GetFileExtensionFromContentType(contentType, imageURL)
 
 	// Generate filename: userId.{extension}
-	filename := fmt.Sprintf("%s.%s", userID.String(), extension)
+	filename := fmt.Sprintf("%s.%s", ctrl.GenerateAvatarHash(username), extension)
 
 	// Upload to service
-	uploadedURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(userID.String(), fileBytes, filename, contentType)
+	uploadedURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(username, fileBytes, filename, contentType)
 	if err != nil {
 		return "", fmt.Errorf("failed to upload avatar: %w", err)
 	}
@@ -190,15 +200,15 @@ func (ctrl *Controller) UploadAvatarFromURL(userID uuid.UUID, imageURL string) (
 }
 
 // UploadAvatarFromFile processes an uploaded file and uploads it to the upload service
-func (ctrl *Controller) UploadAvatarFromFile(userID uuid.UUID, fileBytes []byte, contentType string) (string, error) {
+func (ctrl *Controller) UploadAvatarFromFile(username string, fileBytes []byte, contentType string) (string, error) {
 	// Get file extension
 	extension := ctrl.GetFileExtensionFromContentType(contentType, "")
 
 	// Generate filename: userId.{extension}
-	filename := fmt.Sprintf("%s.%s", userID.String(), extension)
+	filename := fmt.Sprintf("%s.%s", ctrl.GenerateAvatarHash(username), extension)
 
 	// Upload to service
-	uploadedURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(userID.String(), fileBytes, filename, contentType)
+	uploadedURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(username, fileBytes, filename, contentType)
 	if err != nil {
 		return "", fmt.Errorf("failed to upload avatar: %w", err)
 	}
