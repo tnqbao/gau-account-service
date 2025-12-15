@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gau-account
+spec:
+  rules:
+    - host: placeholder.example.com
+      http:
+        paths:
+          - path: /api/v2/account/
+            pathType: Prefix
+            backend:
+              service:
+                name: gau-account-http
+                port:
+                  number: 8080

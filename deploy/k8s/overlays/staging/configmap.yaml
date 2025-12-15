@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gau-account-config
+data:
+  SERVICE_NAME: "account-service"
+  GROUP_NAME: "gau-microservices"
+
+  PGPOOL_HOST: "pgpool-service"
+  PGPOOL_PORT: "5432"
+  PGPOOL_DB: "account_db"
+
+  REDIS_HOST: "dragonfly-service"
+  REDIS_PORT: "6379"
+
+  RABBITMQ_HOST: "rabbitmq-service"
+  RABBITMQ_PORT: "5672"
+
+  AUTHORIZATION_SERVICE_URL: "http://gau-authorization-http-service:8080"
+  UPLOAD_SERVICE_URL: "http://gau-upload-http-service:8080"
+  CDN_SERVICE_URL: "https://cdn.gauas.online"
