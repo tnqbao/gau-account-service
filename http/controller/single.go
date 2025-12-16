@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -88,9 +89,15 @@ func (ctrl *Controller) LoginWithGoogle(c *gin.Context) {
 						ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Google Login] Failed to upload avatar for user: %s", userID.String())
 						return fmt.Errorf("failed to upload avatar: %w", err)
 					}
-					// Add CDN URL prefix
-					fullImageURL := fmt.Sprintf("%s/images/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL)
-					newUser.AvatarURL = &fullImageURL
+					// Kiểm tra nếu URL trả về chưa có prefix thì thêm CDN URL
+					if strings.HasPrefix(imageURL, "http://") || strings.HasPrefix(imageURL, "https://") {
+						// URL đã đầy đủ từ upload service
+						newUser.AvatarURL = &imageURL
+					} else {
+						// Thêm CDN URL prefix cho đường dẫn tương đối
+						fullImageURL := fmt.Sprintf("%s/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL)
+						newUser.AvatarURL = &fullImageURL
+					}
 					ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Google Login] Avatar uploaded successfully for user: %s", userID.String())
 				}
 

@@ -191,7 +191,7 @@ func (ctrl *Controller) UploadAvatarFromURL(username string, imageURL string) (s
 	filename := fmt.Sprintf("%s.%s", ctrl.GenerateAvatarHash(username), extension)
 
 	// Upload to service
-	uploadedURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(username, fileBytes, filename, contentType)
+	uploadedURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(fileBytes, filename, contentType)
 	if err != nil {
 		return "", fmt.Errorf("failed to upload avatar: %w", err)
 	}
@@ -208,7 +208,7 @@ func (ctrl *Controller) UploadAvatarFromFile(username string, fileBytes []byte, 
 	filename := fmt.Sprintf("%s.%s", ctrl.GenerateAvatarHash(username), extension)
 
 	// Upload to service
-	uploadedURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(username, fileBytes, filename, contentType)
+	uploadedURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(fileBytes, filename, contentType)
 	if err != nil {
 		return "", fmt.Errorf("failed to upload avatar: %w", err)
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -962,8 +963,15 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 			return fmt.Errorf("failed to upload image: %w", err)
 		}
 
-		// Add CDN URL prefix
-		fullImageURL = fmt.Sprintf("%s/images/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL)
+		// Kiểm tra nếu URL trả về chưa có prefix thì thêm CDN URL
+		if strings.HasPrefix(imageURL, "http://") || strings.HasPrefix(imageURL, "https://") {
+			// URL đã đầy đủ từ upload service
+			fullImageURL = imageURL
+		} else {
+			// Thêm CDN URL prefix cho đường dẫn tương đối
+			// Upload service trả về dạng: "avatar/root/{filename}"
+			fullImageURL = fmt.Sprintf("%s/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL)
+		}
 
 		user.AvatarURL = &fullImageURL
 

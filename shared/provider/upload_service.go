@@ -31,16 +31,22 @@ func NewUploadServiceProvider(config *config.EnvConfig) *UploadServiceProvider {
 	}
 }
 
-func (p *UploadServiceProvider) UploadAvatarImage(userID string, imageData []byte, filename string, contentType string) (string, error) {
-	url := fmt.Sprintf("%s/api/v2/upload/image", p.UploadServiceURL)
+func (p *UploadServiceProvider) UploadAvatarImage(imageData []byte, filename string, contentType string) (string, error) {
+	// Sử dụng API mới POST /api/v2/upload/file
+	url := fmt.Sprintf("%s/api/v2/upload/file", p.UploadServiceURL)
 
 	// Prepare multipart form data
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
 
-	// Add file_path field
-	if err := w.WriteField("file_path", "avatar"); err != nil {
-		return "", fmt.Errorf("failed to write file_path field: %w", err)
+	// Add bucket field
+	if err := w.WriteField("bucket", "avatar"); err != nil {
+		return "", fmt.Errorf("failed to write bucket field: %w", err)
+	}
+
+	// Add path field
+	if err := w.WriteField("path", "root"); err != nil {
+		return "", fmt.Errorf("failed to write path field: %w", err)
 	}
 
 	// Add file field with proper content type
@@ -55,9 +61,12 @@ func (p *UploadServiceProvider) UploadAvatarImage(userID string, imageData []byt
 	if _, err := fw.Write(imageData); err != nil {
 		return "", fmt.Errorf("failed to write image data: %w", err)
 	}
-	w.Close()
+	if err := w.Close(); err != nil {
+		return "", fmt.Errorf("failed to close multipart writer: %w", err)
+	}
 
-	req, err := http.NewRequest(http.MethodPatch, url, &b)
+	// Sử dụng method POST cho API mới
+	req, err := http.NewRequest(http.MethodPost, url, &b)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
@@ -69,16 +78,22 @@ func (p *UploadServiceProvider) UploadAvatarImage(userID string, imageData []byt
 	if err != nil {
 		return "", fmt.Errorf("failed to upload image: %w", err)
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		raw, _ := io.ReadAll(resp.Body)
 		return "", fmt.Errorf("upload service returned %d: %s", resp.StatusCode, string(raw))
 	}
+
 	var response struct {
-		FilePath string `json:"file_path"`
+		URL string `json:"url"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return "", fmt.Errorf("failed to decode response: %w", err)
 	}
-	return response.FilePath, nil
+
+	// Trả về URL đầy đủ từ upload service
+	return response.URL, nil
 }

@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 )
 
@@ -25,16 +24,9 @@ type EnvConfig struct {
 		GlobalDomain string
 	}
 	Redis struct {
-		Password  string
-		Database  int
-		RedisHost string
-		RedisPort string
-	}
-	RabbitMQ struct {
-		Host     string
-		Port     string
-		Username string
+		Address  string
 		Password string
+		Database int
 	}
 	ExternalService struct {
 		AuthorizationServiceURL string
@@ -51,7 +43,6 @@ type EnvConfig struct {
 		Mode  string
 		Group string
 	}
-	DomainName string
 }
 
 func LoadEnvConfig() *EnvConfig {
@@ -77,31 +68,12 @@ func LoadEnvConfig() *EnvConfig {
 	config.CORS.AllowDomains = os.Getenv("ALLOWED_DOMAINS")
 	config.CORS.GlobalDomain = os.Getenv("GLOBAL_DOMAIN")
 
-	config.Redis.Password = os.Getenv("REDIS_PASSWORD")
-	config.Redis.Database, _ = strconv.Atoi(os.Getenv("REDIS_DB"))
-	if config.Redis.Database == 0 {
-		config.Redis.Database = 0
-	}
-	config.Redis.RedisHost = os.Getenv("REDIS_HOST")
-	config.Redis.RedisPort = os.Getenv("REDIS_PORT")
-
-	// RabbitMQ
-	config.RabbitMQ.Host = os.Getenv("RABBITMQ_HOST")
-	if config.RabbitMQ.Host == "" {
-		config.RabbitMQ.Host = "localhost"
-	}
-	config.RabbitMQ.Port = os.Getenv("RABBITMQ_PORT")
-	if config.RabbitMQ.Port == "" {
-		config.RabbitMQ.Port = "5672"
-	}
-	config.RabbitMQ.Username = os.Getenv("RABBITMQ_USER")
-	if config.RabbitMQ.Username == "" {
-		config.RabbitMQ.Username = "guest"
-	}
-	config.RabbitMQ.Password = os.Getenv("RABBITMQ_PASSWORD")
-	if config.RabbitMQ.Password == "" {
-		config.RabbitMQ.Password = "guest"
-	}
+	//config.Redis.Address = os.Getenv("REDIS_ADDRESS")
+	//config.Redis.Password = os.Getenv("REDIS_PASSWORD")
+	//config.Redis.Database, _ = strconv.Atoi(os.Getenv("REDIS_DB"))
+	//if config.Redis.Database == 0 {
+	//	config.Redis.Database = 0
+	//}
 
 	config.PrivateKey = os.Getenv("PRIVATE_KEY")
 
@@ -144,11 +116,6 @@ func LoadEnvConfig() *EnvConfig {
 	config.Environment.Group = os.Getenv("GROUP_NAME")
 	if config.Environment.Group == "" {
 		config.Environment.Group = "local"
-	}
-
-	config.DomainName = os.Getenv("DOMAIN_NAME")
-	if config.DomainName == "" {
-		config.DomainName = "localhost:8080"
 	}
 
 	return &config
