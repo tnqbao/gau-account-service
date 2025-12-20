@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 )
 
@@ -23,12 +22,12 @@ type EnvConfig struct {
 	CORS struct {
 		AllowDomains string
 		GlobalDomain string
+		DomainName   string
 	}
 	Redis struct {
-		Password  string
-		Database  int
-		RedisHost string
-		RedisPort string
+		Address  string
+		Password string
+		Database int
 	}
 	RabbitMQ struct {
 		Host     string
@@ -51,7 +50,6 @@ type EnvConfig struct {
 		Mode  string
 		Group string
 	}
-	DomainName string
 }
 
 func LoadEnvConfig() *EnvConfig {
@@ -76,14 +74,14 @@ func LoadEnvConfig() *EnvConfig {
 
 	config.CORS.AllowDomains = os.Getenv("ALLOWED_DOMAINS")
 	config.CORS.GlobalDomain = os.Getenv("GLOBAL_DOMAIN")
-
-	config.Redis.Password = os.Getenv("REDIS_PASSWORD")
-	config.Redis.Database, _ = strconv.Atoi(os.Getenv("REDIS_DB"))
-	if config.Redis.Database == 0 {
-		config.Redis.Database = 0
+	config.CORS.DomainName = os.Getenv("DOMAIN_NAME")
+	if config.CORS.DomainName == "" {
+		config.CORS.DomainName = "gauas.online"
 	}
-	config.Redis.RedisHost = os.Getenv("REDIS_HOST")
-	config.Redis.RedisPort = os.Getenv("REDIS_PORT")
+
+	// Redis
+	config.Redis.Address = os.Getenv("REDIS_ADDRESS")
+	config.Redis.Password = os.Getenv("REDIS_PASSWORD")
 
 	// RabbitMQ
 	config.RabbitMQ.Host = os.Getenv("RABBITMQ_HOST")
@@ -144,11 +142,6 @@ func LoadEnvConfig() *EnvConfig {
 	config.Environment.Group = os.Getenv("GROUP_NAME")
 	if config.Environment.Group == "" {
 		config.Environment.Group = "local"
-	}
-
-	config.DomainName = os.Getenv("DOMAIN_NAME")
-	if config.DomainName == "" {
-		config.DomainName = "localhost:8080"
 	}
 
 	return &config
