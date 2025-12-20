@@ -22,6 +22,7 @@ type EnvConfig struct {
 	CORS struct {
 		AllowDomains string
 		GlobalDomain string
+		DomainName   string
 	}
 	Redis struct {
 		Address  string
@@ -73,6 +74,10 @@ func LoadEnvConfig() *EnvConfig {
 
 	config.CORS.AllowDomains = os.Getenv("ALLOWED_DOMAINS")
 	config.CORS.GlobalDomain = os.Getenv("GLOBAL_DOMAIN")
+	config.CORS.DomainName = os.Getenv("DOMAIN_NAME")
+	if config.CORS.DomainName == "" {
+		config.CORS.DomainName = "gauas.online"
+	}
 
 	// Redis
 	config.Redis.Address = os.Getenv("REDIS_ADDRESS")

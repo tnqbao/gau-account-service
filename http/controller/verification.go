@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/tnqbao/gau-account-service/shared/utils"
@@ -46,7 +47,7 @@ func (ctrl *Controller) SendEmailVerification(c *gin.Context) {
 	}
 
 	// Generate verification link
-	verificationLink := fmt.Sprintf("https://%s/api/v2/account/verify-email/%s", ctrl.Config.EnvConfig.DomainName, token)
+	verificationLink := fmt.Sprintf("https://%s/api/v2/account/verify-email/%s", ctrl.Config.EnvConfig.CORS.DomainName, token)
 
 	// Prepare email content
 	recipientName := "User"

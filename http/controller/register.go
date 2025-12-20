@@ -148,7 +148,7 @@ func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 		if err != nil {
 			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Register] Failed to generate verification token for user: %s", user.UserID.String())
 		} else {
-			verificationLink := fmt.Sprintf("https://%s/api/v2/account/verify-email/%s", ctrl.Config.EnvConfig.DomainName, token)
+			verificationLink := fmt.Sprintf("https://%s/api/v2/account/verify-email/%s", ctrl.Config.EnvConfig.CORS.DomainName, token)
 
 			recipientName := req.FullName
 			if recipientName == "" && user.Username != nil {

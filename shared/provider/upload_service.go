@@ -13,6 +13,7 @@ import (
 
 type UploadServiceProvider struct {
 	UploadServiceURL string `json:"upload_service_url"`
+	CDNServiceURL    string `json:"cdn_service_url"`
 	PrivateKey       string `json:"private_key,omitempty"`
 }
 
@@ -27,8 +28,21 @@ func NewUploadServiceProvider(config *config.EnvConfig) *UploadServiceProvider {
 
 	return &UploadServiceProvider{
 		UploadServiceURL: config.ExternalService.UploadServiceURL,
+		CDNServiceURL:    config.ExternalService.CDNServiceURL,
 		PrivateKey:       config.PrivateKey,
 	}
+}
+
+// UploadResponse represents the response from upload service
+type UploadResponse struct {
+	Bucket      string `json:"bucket"`
+	ContentType string `json:"content_type"`
+	Duplicated  bool   `json:"duplicated"`
+	FileHash    string `json:"file_hash"`
+	FilePath    string `json:"file_path"`
+	Message     string `json:"message"`
+	Size        int64  `json:"size"`
+	Status      int    `json:"status"`
 }
 
 func (p *UploadServiceProvider) UploadAvatarImage(imageData []byte, filename string, contentType string) (string, error) {
@@ -87,13 +101,12 @@ func (p *UploadServiceProvider) UploadAvatarImage(imageData []byte, filename str
 		return "", fmt.Errorf("upload service returned %d: %s", resp.StatusCode, string(raw))
 	}
 
-	var response struct {
-		URL string `json:"url"`
-	}
+	var response UploadResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return "", fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	// Trả về URL đầy đủ từ upload service
-	return response.URL, nil
+	cdnURL := fmt.Sprintf("%s/%s/%s", p.CDNServiceURL, response.Bucket, response.FilePath)
+
+	return cdnURL, nil
 }
