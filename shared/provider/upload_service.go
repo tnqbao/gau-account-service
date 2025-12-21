@@ -54,14 +54,14 @@ func (p *UploadServiceProvider) UploadAvatarImage(imageData []byte, filename str
 	w := multipart.NewWriter(&b)
 
 	// Add bucket field
-	if err := w.WriteField("bucket", "avatar"); err != nil {
+	if err := w.WriteField("bucket", "images"); err != nil {
 		return "", fmt.Errorf("failed to write bucket field: %w", err)
 	}
 
-	// Add path field
-	//if err := w.WriteField("path", ""); err != nil {
-	//	return "", fmt.Errorf("failed to write path field: %w", err)
-	//}
+	Add path field
+	if err := w.WriteField("path", "avatar"); err != nil {
+		return "", fmt.Errorf("failed to write path field: %w", err)
+	}
 
 	// Add file field with proper content type
 	h := make(map[string][]string)
