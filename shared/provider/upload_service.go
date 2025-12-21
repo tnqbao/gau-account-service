@@ -59,9 +59,9 @@ func (p *UploadServiceProvider) UploadAvatarImage(imageData []byte, filename str
 	}
 
 	// Add path field
-	if err := w.WriteField("path", "root"); err != nil {
-		return "", fmt.Errorf("failed to write path field: %w", err)
-	}
+	//if err := w.WriteField("path", ""); err != nil {
+	//	return "", fmt.Errorf("failed to write path field: %w", err)
+	//}
 
 	// Add file field with proper content type
 	h := make(map[string][]string)
@@ -79,7 +79,6 @@ func (p *UploadServiceProvider) UploadAvatarImage(imageData []byte, filename str
 		return "", fmt.Errorf("failed to close multipart writer: %w", err)
 	}
 
-	// Sử dụng method POST cho API mới
 	req, err := http.NewRequest(http.MethodPost, url, &b)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
