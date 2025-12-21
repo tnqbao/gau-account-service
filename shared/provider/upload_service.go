@@ -58,7 +58,7 @@ func (p *UploadServiceProvider) UploadAvatarImage(imageData []byte, filename str
 		return "", fmt.Errorf("failed to write bucket field: %w", err)
 	}
 
-	Add path field
+	//Add path field
 	if err := w.WriteField("path", "avatar"); err != nil {
 		return "", fmt.Errorf("failed to write path field: %w", err)
 	}
