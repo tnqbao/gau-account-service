@@ -80,8 +80,21 @@ func LoadEnvConfig() *EnvConfig {
 	}
 
 	// Redis
-	config.Redis.Address = os.Getenv("REDIS_ADDRESS")
+	redisHost := os.Getenv("REDIS_HOST")
+	if redisHost == "" {
+		redisHost = "localhost"
+	}
+	redisPort := os.Getenv("REDIS_PORT")
+	if redisPort == "" {
+		redisPort = "6379"
+	}
+	config.Redis.Address = fmt.Sprintf("%s:%s", redisHost, redisPort)
 	config.Redis.Password = os.Getenv("REDIS_PASSWORD")
+	if val := os.Getenv("REDIS_DB"); val != "" {
+		fmt.Sscanf(val, "%d", &config.Redis.Database)
+	} else {
+		config.Redis.Database = 0
+	}
 
 	// RabbitMQ
 	config.RabbitMQ.Host = os.Getenv("RABBITMQ_HOST")
