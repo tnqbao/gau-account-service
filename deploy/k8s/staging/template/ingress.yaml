@@ -14,6 +14,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: gau-account-service
+                name: gau-account-http-service
                 port:
                   number: 8080

@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gau-account-http
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gau-account-http
+  template:
+    metadata:
+      labels:
+        app: gau-account-http
+    spec:
+      containers:
+        - name: gau-account-http
+          image: iamqbao/gau_account_service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: gau-account-config
+            - secretRef:
+                name: gau-account-secret
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 100m
+              memory: 256Mi

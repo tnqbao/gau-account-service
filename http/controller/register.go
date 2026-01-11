@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	entity2 "github.com/tnqbao/gau-account-service/shared/entity"
@@ -76,6 +78,7 @@ func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 			tx.Rollback()
 			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Register] Failed to generate username from full name: %s", req.FullName)
 			utils.JSON500(c, "Internal server error")
+			return
 		}
 		user.Username = &generatedUsername
 	}
@@ -139,6 +142,36 @@ func (ctrl *Controller) RegisterWithIdentifierAndPassword(c *gin.Context) {
 	}
 
 	ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Register] Registration completed successfully for user: %s", user.UserID.String())
+
+	if req.Email != nil && *req.Email != "" {
+		token, err := ctrl.Repository.GenerateVerificationToken(ctx, user.UserID.String(), *req.Email)
+		if err != nil {
+			ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Register] Failed to generate verification token for user: %s", user.UserID.String())
+		} else {
+			verificationLink := fmt.Sprintf("https://%s/api/v2/account/verify-email/%s", ctrl.Config.EnvConfig.CORS.DomainName, token)
+
+			recipientName := req.FullName
+			if recipientName == "" && user.Username != nil {
+				recipientName = *user.Username
+			}
+
+			content := fmt.Sprintf("Xin chào %s,\n\nCảm ơn bạn đã đăng ký tài khoản tại Gauas!\n\nVui lòng xác thực địa chỉ email của bạn bằng cách nhấp vào liên kết bên dưới.\n\nLiên kết này sẽ hết hạn sau 24 giờ.", recipientName)
+
+			err = ctrl.Provider.EmailProducer.SendEmailConfirmation(
+				ctx,
+				*req.Email,
+				recipientName,
+				content,
+				verificationLink,
+			)
+
+			if err != nil {
+				ctrl.Provider.LoggerProvider.ErrorWithContextf(ctx, err, "[Register] Failed to send verification email for user: %s", user.UserID.String())
+			} else {
+				ctrl.Provider.LoggerProvider.InfoWithContextf(ctx, "[Register] Verification email sent successfully to: %s", *req.Email)
+			}
+		}
+	}
 
 	utils.JSON200(c, gin.H{
 		"message": "Registration successful",

@@ -3,6 +3,7 @@ package repository
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	entity2 "github.com/tnqbao/gau-account-service/shared/entity"
@@ -149,13 +150,23 @@ func (r *Repository) CountUsersByUsername(fullName string) (int64, error) {
 	return count, nil
 }
 
-// CountUsersByUsernameWithTransaction counts users with the same fullname within a transaction
-func (r *Repository) CountUsersByUsernameWithTransaction(tx *gorm.DB, fullName string) (int64, error) {
+// CountUsersByUsernameWithTransaction counts users with usernames starting with the base username and returns all matching usernames
+func (r *Repository) CountUsersByUsernameWithTransaction(tx *gorm.DB, baseUsername string) (int64, error) {
 	var count int64
-	if err := tx.Model(&entity2.User{}).Where("username = ?", fullName).Count(&count).Error; err != nil {
+	// Count all usernames that start with baseUsername (e.g., "nguyenvana", "nguyenvana1", "nguyenvana2")
+	if err := tx.Model(&entity2.User{}).Where("username LIKE ?", baseUsername+"%").Count(&count).Error; err != nil {
 		return 0, fmt.Errorf("error counting users by username: %v", err)
 	}
 	return count, nil
+}
+
+// GetUsernamesStartingWithTransaction gets all usernames starting with base username within a transaction
+func (r *Repository) GetUsernamesStartingWithTransaction(tx *gorm.DB, baseUsername string) ([]string, error) {
+	var usernames []string
+	if err := tx.Model(&entity2.User{}).Where("username LIKE ?", baseUsername+"%").Pluck("username", &usernames).Error; err != nil {
+		return nil, fmt.Errorf("error getting usernames: %v", err)
+	}
+	return usernames, nil
 }
 
 func (r *Repository) GetUserByIdentifierAndPassword(identifierType, identifier, hashedPassword string) (*entity2.User, error) {
@@ -221,6 +232,20 @@ func (r *Repository) GetUserVerificationByMethodAndValue(userID uuid.UUID, metho
 func (r *Repository) UpdateUserVerification(verification *entity2.UserVerification) error {
 	if err := r.Db.Save(verification).Error; err != nil {
 		return fmt.Errorf("error updating user verification: %v", err)
+	}
+	return nil
+}
+
+// UpdateEmailVerificationStatus updates the email verification status to verified
+func (r *Repository) UpdateEmailVerificationStatus(userID uuid.UUID, email string) error {
+	now := time.Now()
+	if err := r.Db.Model(&entity2.UserVerification{}).
+		Where("user_id = ? AND method = ? AND value = ?", userID, "email", email).
+		Updates(map[string]interface{}{
+			"is_verified": true,
+			"verified_at": now,
+		}).Error; err != nil {
+		return fmt.Errorf("error updating email verification status: %v", err)
 	}
 	return nil
 }

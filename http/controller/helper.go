@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -166,8 +167,17 @@ func (ctrl *Controller) GetFileExtensionFromContentType(contentType string, fall
 	}
 }
 
+// GenerateAvatarHash generates a unique hash from username and timestamp
+func (ctrl *Controller) GenerateAvatarHash(username string) string {
+	timestamp := time.Now().UnixNano()
+	data := fmt.Sprintf("%s_%d", username, timestamp)
+	hasher := sha256.New()
+	hasher.Write([]byte(data))
+	return hex.EncodeToString(hasher.Sum(nil))[:16] // Use first 16 characters for shorter hash
+}
+
 // UploadAvatarFromURL downloads an image from URL and uploads it to the upload service
-func (ctrl *Controller) UploadAvatarFromURL(userID uuid.UUID, imageURL string) (string, error) {
+func (ctrl *Controller) UploadAvatarFromURL(username string, imageURL string) (string, error) {
 	// Download image
 	fileBytes, contentType, err := ctrl.DownloadImageFromURL(imageURL)
 	if err != nil {
@@ -178,10 +188,10 @@ func (ctrl *Controller) UploadAvatarFromURL(userID uuid.UUID, imageURL string) (
 	extension := ctrl.GetFileExtensionFromContentType(contentType, imageURL)
 
 	// Generate filename: userId.{extension}
-	filename := fmt.Sprintf("%s.%s", userID.String(), extension)
+	filename := fmt.Sprintf("%s.%s", ctrl.GenerateAvatarHash(username), extension)
 
 	// Upload to service
-	uploadedURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(userID.String(), fileBytes, filename, contentType)
+	uploadedURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(fileBytes, filename, contentType)
 	if err != nil {
 		return "", fmt.Errorf("failed to upload avatar: %w", err)
 	}
@@ -190,15 +200,15 @@ func (ctrl *Controller) UploadAvatarFromURL(userID uuid.UUID, imageURL string) (
 }
 
 // UploadAvatarFromFile processes an uploaded file and uploads it to the upload service
-func (ctrl *Controller) UploadAvatarFromFile(userID uuid.UUID, fileBytes []byte, contentType string) (string, error) {
+func (ctrl *Controller) UploadAvatarFromFile(username string, fileBytes []byte, contentType string) (string, error) {
 	// Get file extension
 	extension := ctrl.GetFileExtensionFromContentType(contentType, "")
 
 	// Generate filename: userId.{extension}
-	filename := fmt.Sprintf("%s.%s", userID.String(), extension)
+	filename := fmt.Sprintf("%s.%s", ctrl.GenerateAvatarHash(username), extension)
 
 	// Upload to service
-	uploadedURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(userID.String(), fileBytes, filename, contentType)
+	uploadedURL, err := ctrl.Provider.UploadServiceProvider.UploadAvatarImage(fileBytes, filename, contentType)
 	if err != nil {
 		return "", fmt.Errorf("failed to upload avatar: %w", err)
 	}
@@ -260,16 +270,44 @@ func (ctrl *Controller) GenerateUsernameFromFullNameWithTransaction(tx *gorm.DB,
 	normalizedName := ctrl.RemoveVietnameseDiacritics(fullName)
 	baseUsername := strings.ToLower(strings.ReplaceAll(normalizedName, " ", ""))
 
-	// Count users with the same username within transaction
-	count, err := ctrl.Repository.CountUsersByUsernameWithTransaction(tx, baseUsername)
+	// Get all usernames starting with baseUsername within transaction
+	usernames, err := ctrl.Repository.GetUsernamesStartingWithTransaction(tx, baseUsername)
 	if err != nil {
-		return "", fmt.Errorf("failed to count users with username: %w", err)
+		return "", fmt.Errorf("failed to get usernames: %w", err)
 	}
 
-	// Generate username with count
-	if count > 0 {
-		return fmt.Sprintf("%s%d", baseUsername, count), nil
+	// If no existing usernames, return the base username
+	if len(usernames) == 0 {
+		return baseUsername, nil
 	}
 
-	return baseUsername, nil
+	// Find the maximum suffix number
+	maxSuffix := -1
+	baseLen := len(baseUsername)
+
+	for _, username := range usernames {
+		if username == baseUsername {
+			// Exact match, set maxSuffix to 0 if not set
+			if maxSuffix < 0 {
+				maxSuffix = 0
+			}
+		} else if len(username) > baseLen && strings.HasPrefix(username, baseUsername) {
+			// Extract suffix and check if it's a number
+			suffix := username[baseLen:]
+			var num int
+			if _, err := fmt.Sscanf(suffix, "%d", &num); err == nil {
+				if num > maxSuffix {
+					maxSuffix = num
+				}
+			}
+		}
+	}
+
+	// Generate new username with next suffix
+	if maxSuffix < 0 {
+		// No matching usernames found (shouldn't happen, but just in case)
+		return baseUsername, nil
+	}
+
+	return fmt.Sprintf("%s%d", baseUsername, maxSuffix+1), nil
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -937,22 +938,39 @@ func (ctrl *Controller) UpdateAvatarImage(c *gin.Context) {
 	// Use GORM's Transaction method for avatar upload and database update
 	var fullImageURL string
 	err = ctrl.ExecuteInTransaction(func(tx *gorm.DB) error {
-		// Upload avatar image
-		imageURL, err := ctrl.UploadAvatarFromFile(userID, fileBytes, contentType)
-		if err != nil {
-			return fmt.Errorf("failed to upload image: %w", err)
-		}
-
-		// Add CDN URL prefix
-		fullImageURL = fmt.Sprintf("%s/images/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL)
-
-		// Get user and update avatar URL
+		// Get user first to obtain username
 		user, err := ctrl.Repository.GetUserById(userID)
 		if err != nil {
 			if err.Error() == "record not found" {
 				return fmt.Errorf("user not found")
 			}
 			return fmt.Errorf("failed to get user: %w", err)
+		}
+
+		// Use username for avatar hash generation
+		username := ""
+		if user.Username != nil {
+			username = *user.Username
+		} else if user.Email != nil {
+			username = *user.Email
+		} else {
+			username = userID.String()
+		}
+
+		// Upload avatar image with username-based hash
+		imageURL, err := ctrl.UploadAvatarFromFile(username, fileBytes, contentType)
+		if err != nil {
+			return fmt.Errorf("failed to upload image: %w", err)
+		}
+
+		// Kiểm tra nếu URL trả về chưa có prefix thì thêm CDN URL
+		if strings.HasPrefix(imageURL, "http://") || strings.HasPrefix(imageURL, "https://") {
+			// URL đã đầy đủ từ upload service
+			fullImageURL = imageURL
+		} else {
+			// Thêm CDN URL prefix cho đường dẫn tương đối
+			// Upload service trả về dạng: "avatar/root/{filename}"
+			fullImageURL = fmt.Sprintf("%s/%s", ctrl.Config.EnvConfig.ExternalService.CDNServiceURL, imageURL)
 		}
 
 		user.AvatarURL = &fullImageURL

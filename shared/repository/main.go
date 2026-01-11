@@ -1,21 +1,22 @@
 package repository
 
 import (
+	"github.com/redis/go-redis/v9"
 	"github.com/tnqbao/gau-account-service/shared/infra"
 	"gorm.io/gorm"
 )
 
 type Repository struct {
-	Db *gorm.DB
-	//cacheDb *redis.Client
+	Db      *gorm.DB
+	cacheDb *redis.Client
 }
 
 var repository *Repository
 
 func InitRepository(infra *infra.Infra) *Repository {
 	repository = &Repository{
-		Db: infra.Postgres.DB,
-		//cacheDb: infra.Redis.Client,
+		Db:      infra.Postgres.DB,
+		cacheDb: infra.Redis.Client,
 	}
 	if repository.Db == nil {
 		panic("database connection is nil")
@@ -37,6 +38,7 @@ func (r *Repository) BeginTransaction() *gorm.DB {
 
 func (r *Repository) WithTransaction(tx *gorm.DB) *Repository {
 	return &Repository{
-		Db: tx,
+		Db:      tx,
+		cacheDb: r.cacheDb,
 	}
 }

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: bao-account-${DEPLOY_ENV}-config
+  name: gau-account-${DEPLOY_ENV}-config
   namespace: bao-${DEPLOY_ENV}-env
   labels:
     app: bao-platform
@@ -12,6 +12,12 @@ data:
   PGPOOL_USER: "${PGPOOL_USER}"
   PGPOOL_PORT: "${PGPOOL_PORT}"
   PGPOOL_URL: "${PGPOOL_URL}"
+  REDIS_HOST: "${REDIS_HOST}"
+  REDIS_PORT: "${REDIS_PORT}"
+  REDIS_DB: "${REDIS_DB}"
+  RABBITMQ_HOST: "${RABBITMQ_HOST}"
+  RABBITMQ_PORT: "${RABBITMQ_PORT}"
+  RABBITMQ_USER: "${RABBITMQ_USER}"
   JWT_ALGORITHM: "${JWT_ALGORITHM}"
   JWT_EXPIRE: "${JWT_EXPIRE}"
   ALLOWED_DOMAINS: "${ALLOWED_DOMAINS}"

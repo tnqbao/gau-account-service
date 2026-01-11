@@ -22,11 +22,18 @@ type EnvConfig struct {
 	CORS struct {
 		AllowDomains string
 		GlobalDomain string
+		DomainName   string
 	}
 	Redis struct {
 		Address  string
 		Password string
 		Database int
+	}
+	RabbitMQ struct {
+		Host     string
+		Port     string
+		Username string
+		Password string
 	}
 	ExternalService struct {
 		AuthorizationServiceURL string
@@ -67,13 +74,45 @@ func LoadEnvConfig() *EnvConfig {
 
 	config.CORS.AllowDomains = os.Getenv("ALLOWED_DOMAINS")
 	config.CORS.GlobalDomain = os.Getenv("GLOBAL_DOMAIN")
+	config.CORS.DomainName = os.Getenv("DOMAIN_NAME")
+	if config.CORS.DomainName == "" {
+		config.CORS.DomainName = "gauas.online"
+	}
 
-	//config.Redis.Address = os.Getenv("REDIS_ADDRESS")
-	//config.Redis.Password = os.Getenv("REDIS_PASSWORD")
-	//config.Redis.Database, _ = strconv.Atoi(os.Getenv("REDIS_DB"))
-	//if config.Redis.Database == 0 {
-	//	config.Redis.Database = 0
-	//}
+	// Redis
+	redisHost := os.Getenv("REDIS_HOST")
+	if redisHost == "" {
+		redisHost = "localhost"
+	}
+	redisPort := os.Getenv("REDIS_PORT")
+	if redisPort == "" {
+		redisPort = "6379"
+	}
+	config.Redis.Address = fmt.Sprintf("%s:%s", redisHost, redisPort)
+	config.Redis.Password = os.Getenv("REDIS_PASSWORD")
+	if val := os.Getenv("REDIS_DB"); val != "" {
+		fmt.Sscanf(val, "%d", &config.Redis.Database)
+	} else {
+		config.Redis.Database = 0
+	}
+
+	// RabbitMQ
+	config.RabbitMQ.Host = os.Getenv("RABBITMQ_HOST")
+	if config.RabbitMQ.Host == "" {
+		config.RabbitMQ.Host = "localhost"
+	}
+	config.RabbitMQ.Port = os.Getenv("RABBITMQ_PORT")
+	if config.RabbitMQ.Port == "" {
+		config.RabbitMQ.Port = "5672"
+	}
+	config.RabbitMQ.Username = os.Getenv("RABBITMQ_USER")
+	if config.RabbitMQ.Username == "" {
+		config.RabbitMQ.Username = "guest"
+	}
+	config.RabbitMQ.Password = os.Getenv("RABBITMQ_PASSWORD")
+	if config.RabbitMQ.Password == "" {
+		config.RabbitMQ.Password = "guest"
+	}
 
 	config.PrivateKey = os.Getenv("PRIVATE_KEY")
 

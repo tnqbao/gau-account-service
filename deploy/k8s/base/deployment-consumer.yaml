@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gau-account-consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gau-account-consumer
+  template:
+    metadata:
+      labels:
+        app: gau-account-consumer
+    spec:
+      containers:
+        - name: gau-account-consumer
+          image: iamqbao/gau_account_service:latest
+          imagePullPolicy: Always
+          args: ["consumer"]
+          envFrom:
+            - configMapRef:
+                name: gau-account-config
+            - secretRef:
+                name: gau-account-secret
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              cpu: 50m
+              memory: 128Mi

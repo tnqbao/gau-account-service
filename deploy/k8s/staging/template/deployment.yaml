@@ -7,28 +7,28 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gau-account-api-service
+      app: gau-account-http-service
   template:
     metadata:
       labels:
-        app: gau-account-api-service
+        app: gau-account-http-service
     spec:
       containers:
-        - name: gau-account-api-service
+        - name: gau-account-http-service
           image: iamqbao/gau_account_service:latest
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
-                name: bao-account-${DEPLOY_ENV}-config
+                name: gau-account-${DEPLOY_ENV}-config
             - secretRef:
-                name: bao-account-${DEPLOY_ENV}-secret
+                name: gau-account-${DEPLOY_ENV}-secret
           resources:
             requests:
               cpu: "50m"
-              memory: "100Mi"
+              memory: "128Mi"
             limits:
               cpu: "100m"
-              memory: "500Mi"
+              memory: "256Mi"
 
 ---
 apiVersion: apps/v1
@@ -52,14 +52,45 @@ spec:
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
-                name: bao-account-${DEPLOY_ENV}-config
+                name: gau-account-${DEPLOY_ENV}-config
             - secretRef:
-                name: bao-account-${DEPLOY_ENV}-secret
+                name: gau-account-${DEPLOY_ENV}-secret
           args: ["consumer"]
           resources:
             requests:
-              cpu: "50m"
-              memory: "100Mi"
+              cpu: "20m"
+              memory: "64Mi"
             limits:
-              cpu: "100m"
-              memory: "500Mi"
+              cpu: "50m"
+              memory: "128Mi"
+---
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: redis-account-deployment
+#  namespace: bao-${DEPLOY_ENV}-env
+#spec:
+#  replicas: 1
+#  selector:
+#    matchLabels:
+#      app: redis-account-service
+#  template:
+#    metadata:
+#      labels:
+#        app: redis-account-service
+#    spec:
+#      containers:
+#        - name: redis-account-service
+#          envFrom:
+#            - configMapRef:
+#                name: gau-account-${DEPLOY_ENV}-config
+#            - secretRef:
+#                name: gau-account-${DEPLOY_ENV}-secret
+#          image: redis:7.2-alpine
+#          resources:
+#            requests:
+#              cpu: "0.2"
+#              memory: "128Mi"
+#            limits:
+#              cpu: "0.5"
+#              memory: "256Mi"
